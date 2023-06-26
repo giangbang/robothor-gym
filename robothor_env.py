@@ -84,8 +84,6 @@ class AI2Thor(gym.Env):
             "rotateGaussianSigma": 0.5,
             "movementGaussianSigma": 0.005,
         }
-        if self.env_params is None:
-            self.env_params = 
         self.controller = Controller(
             **self.env_params
         )
@@ -159,3 +157,8 @@ for obj in TARGET_OBJECT_TYPES:
         max_episode_steps=1000,
         kwargs={"target_object": obj}
     )
+
+if __name__ == "__main__":
+    env = gym.make("robothor-apple")
+    print(env.reset())
+    print(env.step(env.action_space.sample()))
