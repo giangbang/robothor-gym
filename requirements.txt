@@ -1,0 +1,4 @@
+gym
+ai2thor
+ai2thor-colab
+numpy
