@@ -88,6 +88,12 @@ def start_xserver() -> None:
 
     os.environ["DISPLAY"] = ":1"
 
+    os.system("sudo apt install pciutils")
+
+    os.system("apt --fix-broken install")
+
+    # os.system("sudo ai2thor-xorg start")
+
 start_xserver()
 
 class AI2Thor(gym.Env):
@@ -180,7 +186,7 @@ class AI2Thor(gym.Env):
         event = self.controller.step(action = action).last_event
 
         obs = self._obs(event)
-        done = check_success(event.metadata)
+        done = self.check_success(event.metadata)
         reward = float(done)
         return obs, reward, done, False, {}
     
@@ -194,7 +200,7 @@ class AI2Thor(gym.Env):
 
     def check_find_target(self, metadata):
         for obj in metadata["objects"]:
-            if lower(obj["objectType"]) == lower(self.target_object):
+            if obj["objectType"].lower() == self.target_object.lower():
                 if obj["distance"] < 1 and obj["visible"]:
                     return True
         return False
@@ -203,7 +209,7 @@ from gym.envs.registration import register
 
 for obj in TARGET_OBJECT_TYPES:
     register(
-        id=f"robothor-{lower(obj)}",
+        id=f"robothor-{obj.lower()}",
         entry_point=__name__ + ":AI2Thor",
         max_episode_steps=1000,
         kwargs={"target_object": obj}
