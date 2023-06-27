@@ -87,10 +87,14 @@ def start_xserver() -> None:
     os.system("bash frame-buffer start")
 
     os.environ["DISPLAY"] = ":1"
+    
+    os.system("apt --fix-broken install")
+    
+    os.system("sudo apt install libvulkan1 mesa-vulkan-drivers vulkan-utils")
+    
+    os.system("apt update & apt upgrade")
 
     os.system("sudo apt install pciutils")
-
-    os.system("apt --fix-broken install")
 
     # os.system("sudo ai2thor-xorg start")
 
@@ -149,6 +153,7 @@ class AI2Thor(gym.Env):
 
 
     def __init__(self, scene=None, width=128, height=128, depth=False, target_object="Apple"):
+        super().__init__()
         self.init_controller(
             scene=scene,
             width=width,
