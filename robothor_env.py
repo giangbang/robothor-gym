@@ -25,8 +25,8 @@ print(version)
 # more information at https://ai2thor.allenai.org/robothor/documentation/#initialization-scene
 SCENE_ROBOTHOR = [
     f"FloorPlan_Train{i}_{j}" 
-    for i in range(1, 12, 1)
-    for j in range(1, 5, 1)
+    for i in range(1, 13, 1)
+    for j in range(1, 6, 1)
 ]
 
 TARGET_OBJECT_TYPES = [
