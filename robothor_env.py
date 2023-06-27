@@ -9,7 +9,14 @@ from ai2thor.util.metrics import (
     path_distance
 )
 
+import warnings
 
+def fxn():
+    warnings.warn("deprecated", DeprecationWarning)
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    fxn()
 
 version = "AI2-THOR Version: " + ai2thor.__version__
 print(version)
@@ -98,12 +105,13 @@ def start_xserver() -> None:
 
     # os.system("sudo ai2thor-xorg start")
 
-# start_xserver()
+if os.environ.get("DISPLAY", None):
+    start_xserver()
 
 class AI2Thor(gym.Env):
 
     def randomize_controller(self):
-        self.controller.controller.step(
+        self.controller.step(
             action="RandomizeMaterials",
             useTrainMaterials=None,
             useValMaterials=None,
@@ -173,7 +181,7 @@ class AI2Thor(gym.Env):
             "Done"
         ]
         self.depth = depth
-        self.action_space = gym.spaces.Categorical(len(self.all_actions))
+        self.action_space = gym.spaces.Discrete(len(self.all_actions))
         self.observation_space = gym.spaces.Box(shape=(width, height, int(depth) + 1), low=0, high=255, dtype=np.uint8)
 
         from sklearn import preprocessing
@@ -187,8 +195,9 @@ class AI2Thor(gym.Env):
         return obs
 
     def step(self, action):
-        action = self.le.inverse_transform(action)
-        event = self.controller.step(action = action).last_event
+        # action = self.le.inverse_transform(action)
+        action = self.all_actions[action]
+        event = self.controller.step(action = action)
 
         obs = self._obs(event)
         done = self.check_success(event.metadata)
@@ -224,4 +233,6 @@ for obj in TARGET_OBJECT_TYPES:
 if __name__ == "__main__":
     env = gym.make("robothor-apple")
     print(env.reset())
-    print(env.step(env.action_space.sample()))
+    t = env.step(env.action_space.sample())
+    print(len(t))
+    print(t[0].shape)
