@@ -98,7 +98,7 @@ def start_xserver() -> None:
 
     # os.system("sudo ai2thor-xorg start")
 
-start_xserver()
+# start_xserver()
 
 class AI2Thor(gym.Env):
 
