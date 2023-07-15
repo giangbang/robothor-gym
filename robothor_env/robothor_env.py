@@ -161,7 +161,7 @@ for obj in TARGET_OBJECT_TYPES:
         id=f"robothor-{obj.lower()}",
         entry_point=__name__ + ":AI2Thor",
         max_episode_steps=1000,
-        kwargs={"target_object": obj}
+        kwargs={"target_object": obj, "height": 84, "width": 84}
     )
 
 
