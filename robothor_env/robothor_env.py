@@ -71,7 +71,7 @@ class AI2Thor(gym.Env):
         if scene: return scene
         return random.choice(SCENE_ROBOTHOR)
 
-    def init_controller(self, scene=None, width=128, height=128, depth=True, target_object="Apple"):
+    def init_controller(self, scene=None, width=128, height=128, depth=True, target_object="Apple", randomize_scene: bool=True):
         """
         If scene = None, choose randomly from list of valid training scenes
         """
@@ -94,7 +94,8 @@ class AI2Thor(gym.Env):
         self.controller = Controller(
             **self.env_params
         )
-        self.randomize_controller()
+        if randomize_scene:
+            self.randomize_controller()
         return self.controller
 
 
@@ -122,9 +123,6 @@ class AI2Thor(gym.Env):
         self.action_space = gym.spaces.Discrete(len(self.all_actions))
         self.observation_space = gym.spaces.Box(shape=(width, height, int(depth) + 3), low=0, high=255, dtype=np.uint8)
 
-        from sklearn import preprocessing
-        self.le = preprocessing.LabelEncoder()
-        self.le.fit(self.all_actions)
 
     def _obs(self, event):
         obs = event.frame
@@ -133,7 +131,6 @@ class AI2Thor(gym.Env):
         return obs
 
     def step(self, action):
-        # action = self.le.inverse_transform(action)
         action = self.all_actions[action]
         event = self.controller.step(action = action)
 
@@ -174,3 +171,5 @@ if __name__ == "__main__":
     t = env.step(env.action_space.sample())
     print(len(t))
     print(t[0].shape)
+    
+    env = gym.make("robothor-apple", kwargs={"depth": True})
