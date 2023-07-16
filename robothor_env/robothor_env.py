@@ -24,7 +24,7 @@ print(version)
 
 # more information at https://ai2thor.allenai.org/robothor/documentation/#initialization-scene
 SCENE_ROBOTHOR = [
-    f"FloorPlan_Train{i}_{j}" 
+    f"FloorPlan_Train{i}_{j}"
     for i in range(1, 13, 1)
     for j in range(1, 6, 1)
 ]
@@ -44,7 +44,7 @@ TARGET_OBJECT_TYPES = [
     "Television",
     "Vase",
 ]
-    
+
 
 class AI2Thor(gym.Env):
 
@@ -71,7 +71,7 @@ class AI2Thor(gym.Env):
         if scene: return scene
         return random.choice(SCENE_ROBOTHOR)
 
-    def init_controller(self, scene=None, width=128, height=128, depth=True, target_object="Apple", randomize_scene: bool=True):
+    def init_controller(self, scene=None, width=128, height=128, depth=True, target_object="Apple", randomize: bool=True):
         """
         If scene = None, choose randomly from list of valid training scenes
         """
@@ -81,20 +81,20 @@ class AI2Thor(gym.Env):
             "visibilityDistance" : 1.5,
             "scene" : self._choose_scene(scene),
             "gridSize": .25,
-            "snapToGrid": False,
+            "snapToGrid": True,
             "rotateStepDegrees": 90,
             "renderDepthImage": depth,
             "renderInstanceSegmentation": False,
             "width": width,
             "height": height,
             "fieldOfView": 60,
-            "rotateGaussianSigma": 0.5,
-            "movementGaussianSigma": 0.005,
+            "rotateGaussianSigma": 0.5 if randomize else 0,
+            "movementGaussianSigma": 0.005 if randomize else 0,
         }
         self.controller = Controller(
             **self.env_params
         )
-        if randomize_scene:
+        if randomize:
             self.randomize_controller()
         return self.controller
 
@@ -112,10 +112,10 @@ class AI2Thor(gym.Env):
         assert target_object in TARGET_OBJECT_TYPES
         self.all_actions = [
             "MoveAhead",
-            "RotateRight",
-            "MoveLeft",
             "MoveBack",
-            "LookUp", 
+            "RotateRight",
+            "RotateLeft",
+            "LookUp",
             "LookDown",
             "Done"
         ]
@@ -123,6 +123,8 @@ class AI2Thor(gym.Env):
         self.action_space = gym.spaces.Discrete(len(self.all_actions))
         self.observation_space = gym.spaces.Box(shape=(width, height, int(depth) + 3), low=0, high=255, dtype=np.uint8)
 
+    def get_action_id(self, action_str):
+        return self.all_actions.index(action_str)
 
     def _obs(self, event):
         obs = event.frame
@@ -137,12 +139,12 @@ class AI2Thor(gym.Env):
         obs = self._obs(event)
         done = self.check_success(event.metadata)
         reward = float(done)
-        return obs, reward, done, False, {}
-    
+        return obs, reward, done, False, event.metadata
+
     def reset(self):
         self.controller.reset(scene=self._choose_scene(self.scene))
         event = self.randomize_controller().last_event
-        return self._obs(event), {}
+        return self._obs(event), event.metadata
 
     def check_success(self, metadata):
         return metadata["lastAction"] == "Done" and self.check_find_target(metadata)
@@ -150,7 +152,7 @@ class AI2Thor(gym.Env):
     def check_find_target(self, metadata):
         for obj in metadata["objects"]:
             if obj["objectType"].lower() == self.target_object.lower():
-                if obj["distance"] < 1 and obj["visible"]:
+                if obj["distance"] <= 1 and obj["visible"]:
                     return True
         return False
 
@@ -171,5 +173,5 @@ if __name__ == "__main__":
     t = env.step(env.action_space.sample())
     print(len(t))
     print(t[0].shape)
-    
+
     env = gym.make("robothor-apple", kwargs={"depth": True})
