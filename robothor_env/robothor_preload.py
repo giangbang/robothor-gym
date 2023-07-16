@@ -12,23 +12,29 @@ import copy
 class AI2Thor_Preload(gym.Env):
     def __init__(self, precompute_file=None):
         super().__init__()
-        self.graph = None
+        self.graph = EnvGraph()
         if precompute_file:
             self.load_graph(precompute_file)
 
+    @property
+    def action_space(self):
+        return self.graph.action_space
+
+    @property
+    def observation_space(self):
+        return self.graph.observation_space
+
+
     def build_graph(self, target_object="Apple", **kwargs):
         import robothor_env
-        self.graph = EnvGraph()
         kwargs.update(randomize=False)
-        env = gym.make("robothor-"+target_object, kwargs=kwargs)
+        env = gym.make("robothor-"+target_object.lower(), **kwargs)
 
         self.graph.action_space = copy.deepcopy(env.action_space)
         self.graph.observation_space = copy.deepcopy(env.observation_space)
-        self.action_space = env.action_space
-        self.observation_space = env.observation_space
 
         # get positions (x, y, z)
-        positions = controller.step(
+        positions = env.controller.step(
             action="GetReachablePositions"
         ).metadata["actionReturn"]
 
@@ -60,7 +66,7 @@ class AI2Thor_Preload(gym.Env):
                     rotation=v[1],
                     horizon=v[2]
                 )
-                ..., terminate, truncate, metadata = env.step(action)
+                _, _, terminate, truncate, metadata = env.step(action)
                 pos = metadata["agent"]["position"]
                 rot = metadata["agent"]["rotation"]
                 hor = metadata["agent"]["cameraHorizon"]
@@ -98,8 +104,9 @@ class EnvGraph:
         self.adj = {}
         self.obs = {}
         self.terminal = set()
-        self.observation_space = None
-        self.action_space = None
+        # dummy spaces
+        self.observation_space = gym.spaces.Discrete(1)
+        self.action_space = gym.spaces.Discrete(1)
         self.init_v = None
 
     def add_vertex(self, vertex, obs):

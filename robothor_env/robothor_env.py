@@ -99,14 +99,15 @@ class AI2Thor(gym.Env):
         return self.controller
 
 
-    def __init__(self, scene=None, width=128, height=128, depth=False, target_object="Apple"):
+    def __init__(self, scene=None, width=128, height=128, depth=False, target_object="Apple", randomize: bool=True):
         super().__init__()
         self.init_controller(
             scene=scene,
             width=width,
             height=height,
             depth=depth,
-            target_object=target_object
+            target_object=target_object,
+            randomize=randomize
         )
         self.target_object=target_object
         assert target_object in TARGET_OBJECT_TYPES
