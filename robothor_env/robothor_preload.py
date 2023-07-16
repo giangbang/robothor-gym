@@ -40,12 +40,12 @@ class AI2Thor_Preload(gym.Env):
 
         rotations = [dict(x=0, y=i*90, z=0) for i in range(4)]
         horizons = [-30, 0, 30]
-        self.graph.init_v = (env.controller.last_event.metadata.agent["location"],
-            env.controller.last_event.metadata.agent["rotation"],
-            env.controller.last_event.metadata.agent["cameraHorizon"])
+        self.graph.init_v = (env.controller.last_event.metadata["agent"]["position"],
+            env.controller.last_event.metadata["agent"]["rotation"],
+            env.controller.last_event.metadata["agent"]["cameraHorizon"])
 
         # get rotations and camera angle of each position
-        print("Extract total of", len(positions), "positions.")
+        print("Extracting a total of", len(positions), "positions...")
         for position in positions:
             for rotation in rotations:
                 for horizon in horizons:
@@ -55,23 +55,32 @@ class AI2Thor_Preload(gym.Env):
                         rotation=rotation,
                         horizon=horizon
                     )
-                    observation = env._obs(env.controller.last_event)
+                    observation = env.controller.last_event.frame
                     self.graph.add_vertex((position, rotation, horizon), observation)
 
-        for v in self.graph:
+        print("Done extracting positions, building graph...")
+        env.reset()
+        for v, _ in self.graph.obs.items():
+            print(v)
+            pos, rot, hor = v
+            pos = dict(zip(["x", "y", "z"], pos))
+            rot = dict(zip(["x", "y", "z"], rot))
+            hor = hor[0]
+
+            v = (pos, rot, hor)
             for action in range(len(env.all_actions)):
                 env.controller.step(
                     action="Teleport",
-                    position=v[0],
-                    rotation=v[1],
-                    horizon=v[2]
+                    position=pos,
+                    rotation=rot,
+                    horizon=hor
                 )
                 _, _, terminate, truncate, metadata = env.step(action)
                 pos = metadata["agent"]["position"]
                 rot = metadata["agent"]["rotation"]
                 hor = metadata["agent"]["cameraHorizon"]
                 v2  = (pos, rot, hor)
-                assert v2 in self.graph
+                assert v2 in self.graph, v2
 
                 self.graph.add_edge(v, v2, action)
                 if terminate or truncate:
@@ -110,6 +119,7 @@ class EnvGraph:
         self.init_v = None
 
     def add_vertex(self, vertex, obs):
+        vertex = self.convert_vertex(vertex)
         self.adj[vertex] = dict()
         self.obs[vertex] = obs
 
@@ -120,6 +130,7 @@ class EnvGraph:
         return vertex in self.terminal
 
     def add_edge(self, v1, v2, edgetype):
+        v1 = self.convert_vertex(v1)
         self.adj[v1][edgetype].add(v2)
 
     def save(self, path):
@@ -132,10 +143,12 @@ class EnvGraph:
         self.__dict__.update(tmp_dict)
 
     def __contains__(self, vertex):
+        vertex = self.convert_vertex(vertex)
         return vertex in self.obs
 
-    def __iter__(self):
-        return self.obs.keys()
+    def convert_vertex(self, vertex):
+        t = (tuple(vertex[0].values()), tuple(map(int, vertex[1].values())), (int(vertex[2]),))
+        return tuple(tuple(map(lambda x : round(x, 8), tup)) for tup in t)
 
 
 from gym.envs.registration import register
@@ -153,6 +166,7 @@ if __name__ == "__main__":
     env.build_graph()
     end = time.time
     print("total time to build graph:", end-start)
+    env.reset()
 
     n_step = 1000
     start = time.time()
