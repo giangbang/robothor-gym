@@ -129,3 +129,29 @@ class EnvGraph:
 
     def __iter__(self):
         return self.obs.keys()
+
+
+from gym.envs.registration import register
+register(
+    id="robothor-precompute",
+    entry_point=__name__ + ":AI2Thor_Preload",
+    max_episode_steps=1000,
+)
+
+if __name__ == "__main__":
+    env = gym.make("robothor-precompute")
+
+    import time
+    start = time.time()
+    env.build_graph()
+    end = time.time
+    print("total time to build graph:", end-start)
+
+    n_step = 1000
+    start = time.time()
+    for _ in range(n_step):
+        obs, reward, terminate, truncate, info = env.step(env.action_space.sample())
+        if terminate or truncate:
+            env.reset()
+    end = time.time()
+    print("fps:", n_step / (end - start))
