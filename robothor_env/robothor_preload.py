@@ -124,7 +124,7 @@ class EnvGraph:
 
     def add_vertex(self, vertex, obs):
         vertex = self.convert_vertex(vertex)
-        assert vertex not in self.obs
+        assert vertex not in self.obs, vertex
         self.adj[vertex] = dict()
         self.obs[vertex] = obs
 
