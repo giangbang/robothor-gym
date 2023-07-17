@@ -31,7 +31,7 @@ class AI2Thor_Preload(gym.Env):
     @property
     def target_obj(self):
         return self.graph.target_obj
-    
+
 
     def build_graph(self, target_object="Apple", **kwargs):
         import robothor_env
@@ -65,11 +65,12 @@ class AI2Thor_Preload(gym.Env):
         with open('positions.txt', 'w') as f:
             f.write("\n".join(map(str, positions)))
 
+        positions2 = depth_first_search(env)
+        print("pos1, pos2:", len(positions), len(positions2))
+
         rotations = [dict(x=0, y=i*90, z=0) for i in range(4)]
         horizons = [-30, 0, 30]
-        self.graph.init_v = (env.controller.last_event.metadata["agent"]["position"],
-            env.controller.last_event.metadata["agent"]["rotation"],
-            env.controller.last_event.metadata["agent"]["cameraHorizon"])
+        self.graph.init_v = env.get_current_agent_state()
 
         vertices = []
 
@@ -107,9 +108,7 @@ class AI2Thor_Preload(gym.Env):
                     horizon=hor
                 )
                 _, _, terminate, truncate, metadata = env.step(action)
-                pos = metadata["agent"]["position"]
-                rot = metadata["agent"]["rotation"]
-                hor = metadata["agent"]["cameraHorizon"]
+                pos, rot, hor = env.get_current_agent_state()
                 v2  = (pos, rot, hor)
                 assert v2 in self.graph, v2
 
@@ -199,6 +198,34 @@ class EnvGraph:
     def __len__(self):
         return len(self.obs)
 
+
+def depth_first_search(env):
+    """
+    Perform dfs on the robothor environment, return a list of all possible ```(position, rotation, horizon)```
+    """
+    graph = EnvGraph()
+    env.reset(env.get_scene(), randomize=False)
+    actions = range(len(env.all_actions)-1) # omit DONE
+    res = []
+
+    def _dfs_helper(v):
+        if v in graph: return
+        res.append(v)
+        graph.add_vertex(v, None) # dummy observation
+        for a in actions:
+            _, _, terminate, truncate, metadata = env.step(action)
+            pos, rot, hor = env.get_current_agent_state()
+            next  = (pos, rot, hor)
+            _dfs_helper(next)
+            env.controller.step(
+                action="Teleport",
+                position=v[0],
+                rotation=v[1],
+                horizon=v[2]
+            )
+
+    _dfs_helper(env.get_current_agent_state())
+    return res
 
 from gym.envs.registration import register
 register(

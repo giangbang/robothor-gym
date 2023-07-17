@@ -74,7 +74,7 @@ class AI2Thor(gym.Env):
     def init_controller(self, scene=None, width=128, height=128, depth=True, target_object="Apple", randomize: bool=True, gridSize:float=0.25):
         """
         If scene = None, choose randomly from list of valid training scenes
-        """ 
+        """
         self.scene = scene
         self.env_params = {
             "agentMode": "locobot",
@@ -147,8 +147,12 @@ class AI2Thor(gym.Env):
     def get_scene(self):
         return self.controller.last_event.metadata["sceneName"]
 
+    def get_current_agent_state(self):
+        metadata = self.controller.last_event.metadata["agent"]
+        return (metadata["position"], metadata["rotation"], metadata["cameraHorizon"])
+
     def reset(self, scene=None, randomize=None):
-        if scene: 
+        if scene:
             self.scene = scene
         if randomize:
             self.randomize = randomize
