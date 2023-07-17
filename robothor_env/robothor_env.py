@@ -71,16 +71,16 @@ class AI2Thor(gym.Env):
         if scene: return scene
         return random.choice(SCENE_ROBOTHOR)
 
-    def init_controller(self, scene=None, width=128, height=128, depth=True, target_object="Apple", randomize: bool=True):
+    def init_controller(self, scene=None, width=128, height=128, depth=True, target_object="Apple", randomize: bool=True, gridSize:float=0.25):
         """
         If scene = None, choose randomly from list of valid training scenes
-        """
+        """ 
         self.scene = scene
         self.env_params = {
             "agentMode": "locobot",
             "visibilityDistance" : 1.5,
             "scene" : self._choose_scene(scene),
-            "gridSize": .25,
+            "gridSize": gridSize,
             "snapToGrid": True,
             "rotateStepDegrees": 90,
             "renderDepthImage": depth,
@@ -99,7 +99,7 @@ class AI2Thor(gym.Env):
         return self.controller
 
 
-    def __init__(self, scene=None, width=128, height=128, depth=False, target_object="Apple", randomize: bool=True):
+    def __init__(self, scene=None, width=128, height=128, depth=False, target_object="Apple", randomize: bool=True, gridSize:float=0.25):
         super().__init__()
         self.init_controller(
             scene=scene,
@@ -107,7 +107,8 @@ class AI2Thor(gym.Env):
             height=height,
             depth=depth,
             target_object=target_object,
-            randomize=randomize
+            randomize=randomize,
+            gridSize=gridSize
         )
         self.randomize = randomize
         self.target_object=target_object
