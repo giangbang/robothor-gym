@@ -33,6 +33,7 @@ if __name__ == "__main__":
     n_step = 10000
     import time
     start_time = time.time()
+    env.reset()
     for _ in range(n_step):
         obs, reward, terminate, truncate, info = env.step(env.action_space.sample())
         if terminate or truncate:
