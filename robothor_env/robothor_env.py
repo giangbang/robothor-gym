@@ -109,6 +109,7 @@ class AI2Thor(gym.Env):
             target_object=target_object,
             randomize=randomize
         )
+        self.randomize = randomize
         self.target_object=target_object
         assert target_object in TARGET_OBJECT_TYPES
         self.all_actions = [
@@ -145,9 +146,14 @@ class AI2Thor(gym.Env):
     def get_scene(self):
         return self.controller.last_event.metadata["sceneName"]
 
-    def reset(self):
+    def reset(self, scene=None, randomize=None):
+        if scene: 
+            self.scene = scene
+        if randomize:
+            self.randomize = randomize
         self.controller.reset(scene=self._choose_scene(self.scene))
-        event = self.randomize_controller().last_event
+        if self.randomize:
+            event = self.randomize_controller().last_event
         return self._obs(event), event.metadata
 
     def check_success(self, metadata):
