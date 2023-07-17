@@ -24,6 +24,14 @@ class AI2Thor_Preload(gym.Env):
     def observation_space(self):
         return self.graph.observation_space
 
+    @property
+    def scene(self):
+        return self.graph.scene
+
+    @property
+    def target_obj(self):
+        return self.graph.target_obj
+    
 
     def build_graph(self, target_object="Apple", **kwargs):
         import robothor_env
@@ -32,13 +40,25 @@ class AI2Thor_Preload(gym.Env):
 
         self.graph.action_space = copy.deepcopy(env.action_space)
         self.graph.observation_space = copy.deepcopy(env.observation_space)
+        self.graph.scene = env.get_scene()
+        self.graph.target_obj = target_object.lower()
 
         # get positions (x, y, z)
         positions = env.controller.step(
             action="GetReachablePositions"
         ).metadata["actionReturn"]
         # add current position
-        positions += [env.controller.last_event.metadata["agent"]["position"]]
+        current_position = env.controller.last_event.metadata["agent"]["position"]
+        if not current_position in positions:
+            print("Adding starting position...")
+            positions += [current_position]
+
+        # delete duplicate positions, if any
+        len_before = len(positions)
+        positions = list(set(positions))
+        num_deleted = len_before - len(positions)
+        if num_deleted > 0:
+            print(f"Delete {num_deleted} duplicated positions.")
         with open('positions.txt', 'w') as f:
             f.write("\n".join(map(str, positions)))
 
@@ -68,7 +88,10 @@ class AI2Thor_Preload(gym.Env):
 
         print("Done extracting positions, building graph...")
         print("Total number of vertices:", len(self.graph.obs))
-        env.reset()
+
+        # reset env to the current scene, if `scene` is None, then
+        # the env will reset to other random scene
+        env.reset(scene=env.get_scene(), randomize=False)
         for v in vertices:
             print(v)
             pos, rot, hor = v
@@ -121,10 +144,12 @@ class EnvGraph:
         self.observation_space = gym.spaces.Discrete(1)
         self.action_space = gym.spaces.Discrete(1)
         self.init_v = None
+        self.scene = None
+        self.target_obj = None
 
     def add_vertex(self, vertex, obs):
         vertex = self.convert_vertex(vertex)
-        assert vertex not in self.obs, vertex
+        assert vertex not in self.obs
         self.adj[vertex] = dict()
         self.obs[vertex] = obs
 
@@ -185,4 +210,5 @@ if __name__ == "__main__":
         if terminate or truncate:
             env.reset()
     end = time.time()
+    env.save_graph(f"robothor-{env.scene}-{env.target_obj}")
     print("fps:", n_step / (end - start))

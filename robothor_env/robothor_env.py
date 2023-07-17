@@ -153,7 +153,8 @@ class AI2Thor(gym.Env):
             self.randomize = randomize
         self.controller.reset(scene=self._choose_scene(self.scene))
         if self.randomize:
-            event = self.randomize_controller().last_event
+            self.randomize_controller()
+        event = self.controller.last_event
         return self._obs(event), event.metadata
 
     def check_success(self, metadata):
