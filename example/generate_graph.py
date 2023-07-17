@@ -3,7 +3,7 @@ import gym
 
 
 list_target_object = [
-    # "GarbageCan",
+    "GarbageCan",
     "HousePlant",
     "Laptop",
     "Mug"
