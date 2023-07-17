@@ -37,12 +37,18 @@ class AI2Thor_Preload(gym.Env):
         positions = env.controller.step(
             action="GetReachablePositions"
         ).metadata["actionReturn"]
+        # add current position
+        positions += [env.controller.last_event.metadata["agent"]["position"]]
+        with open('positions.txt', 'w') as f:
+            f.write("\n".join(map(str, positions)))
 
         rotations = [dict(x=0, y=i*90, z=0) for i in range(4)]
         horizons = [-30, 0, 30]
         self.graph.init_v = (env.controller.last_event.metadata["agent"]["position"],
             env.controller.last_event.metadata["agent"]["rotation"],
             env.controller.last_event.metadata["agent"]["cameraHorizon"])
+
+        vertices = []
 
         # get rotations and camera angle of each position
         print("Extracting a total of", len(positions), "positions...")
@@ -56,18 +62,16 @@ class AI2Thor_Preload(gym.Env):
                         horizon=horizon
                     )
                     observation = env.controller.last_event.frame
-                    self.graph.add_vertex((position, rotation, horizon), observation)
+                    v = (position, rotation, horizon)
+                    self.graph.add_vertex(v, observation)
+                    vertices.append(v)
 
         print("Done extracting positions, building graph...")
+        print("Total number of vertices:", len(self.graph.obs))
         env.reset()
-        for v, _ in self.graph.obs.items():
+        for v in vertices:
             print(v)
             pos, rot, hor = v
-            pos = dict(zip(["x", "y", "z"], pos))
-            rot = dict(zip(["x", "y", "z"], rot))
-            hor = hor[0]
-
-            v = (pos, rot, hor)
             for action in range(len(env.all_actions)):
                 env.controller.step(
                     action="Teleport",
@@ -120,10 +124,12 @@ class EnvGraph:
 
     def add_vertex(self, vertex, obs):
         vertex = self.convert_vertex(vertex)
+        assert vertex not in self.obs
         self.adj[vertex] = dict()
         self.obs[vertex] = obs
 
     def add_terminal(self, vertex):
+        vertex = self.convert_vertex(vertex)
         self.terminal.add(vertex)
 
     def check_terminal(self, vertex):
@@ -131,7 +137,7 @@ class EnvGraph:
 
     def add_edge(self, v1, v2, edgetype):
         v1 = self.convert_vertex(v1)
-        self.adj[v1][edgetype].add(v2)
+        self.adj[v1][edgetype] = v2
 
     def save(self, path):
         with open(path, 'wb') as outp:
@@ -147,8 +153,12 @@ class EnvGraph:
         return vertex in self.obs
 
     def convert_vertex(self, vertex):
+        vertex[1]["y"] = int(round(vertex[1]["y"] / 90) * 90) % 360
         t = (tuple(vertex[0].values()), tuple(map(int, vertex[1].values())), (int(vertex[2]),))
-        return tuple(tuple(map(lambda x : round(x, 8), tup)) for tup in t)
+        return tuple(tuple(map(lambda x : int(x*10000), tup)) for tup in t)
+
+    def __len__(self):
+        return len(self.obs)
 
 
 from gym.envs.registration import register

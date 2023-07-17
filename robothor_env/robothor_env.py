@@ -142,6 +142,9 @@ class AI2Thor(gym.Env):
         reward = float(done)
         return obs, reward, done, False, event.metadata
 
+    def get_scene(self):
+        return self.controller.last_event.metadata["sceneName"]
+
     def reset(self):
         self.controller.reset(scene=self._choose_scene(self.scene))
         event = self.randomize_controller().last_event
