@@ -56,28 +56,6 @@ class AI2Thor_Preload(gym.Env):
 
         print("Total number of vertices:", len(self.graph.obs))
 
-        # reset env to the current scene, if `scene` is None, then
-        # the env will reset to other random scene
-        env.reset(scene=env.get_scene(), randomize=False)
-        print("Building environment dynamic graph...")
-        for v in tqdm(vertices):
-            pos, rot, hor = v
-            for action in range(len(env.all_actions)):
-                env.controller.step(
-                    action="Teleport",
-                    position=pos,
-                    rotation=rot,
-                    horizon=hor
-                )
-                _, _, terminate, truncate, metadata = env.step(action)
-                pos, rot, hor = env.get_current_agent_state()
-                v2  = (pos, rot, hor)
-                assert v2 in self.graph, v2
-
-                self.graph.add_edge(v, v2, action)
-                if terminate or truncate:
-                    self.graph.add_terminal(v)
-
         return self.graph
 
     def load_graph(self, path_to_save_file: str):
@@ -165,8 +143,10 @@ def breath_first_search(env, graph):
     """
     Perform dfs on the robothor environment, return a list of all possible ```(position, rotation, horizon)```
     """
+    # reset env to the current scene, if `scene` is None, then
+    # the env will reset to other random scene
     env.reset(scene=env.get_scene(), randomize=False)
-    actions = range(len(env.all_actions)-1) # omit DONE
+    actions = range(len(env.all_actions))
     res = []
 
     from collections import deque
@@ -184,9 +164,12 @@ def breath_first_search(env, graph):
                 rotation=v[1],
                 horizon=v[2]
             )
-            env.step(action)
+            _, _, terminate, truncate, _ = env.step(action)
             pos, rot, hor = env.get_current_agent_state()
             next  = (pos, rot, hor)
+            graph.add_edge(v, next, action)
+            if terminate or truncate:
+                self.graph.add_terminal(v)
             if next in graph:
                 continue
             q.append(next)
