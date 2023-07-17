@@ -129,6 +129,9 @@ class AI2Thor(gym.Env):
     def get_action_id(self, action_str):
         return self.all_actions.index(action_str)
 
+    def get_last_obs(self):
+        return self._obs(self.controller.last_event)
+
     def _obs(self, event):
         obs = event.frame
         if self.depth:

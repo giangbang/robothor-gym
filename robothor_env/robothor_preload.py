@@ -35,6 +35,8 @@ class AI2Thor_Preload(gym.Env):
 
     def build_graph(self, target_object="Apple", **kwargs):
         import robothor_env
+        from tqdm import tqdm
+
         self.graph = EnvGraph()
         kwargs.update(randomize=False)
         env = gym.make("robothor-"+target_object.lower(), **kwargs)
@@ -45,53 +47,13 @@ class AI2Thor_Preload(gym.Env):
         self.graph.scene = copy.deepcopy(env.get_scene())
         self.graph.target_obj = target_object.lower()
         self.graph.env_params = copy.deepcopy(env.env_params)
-
-        # get positions (x, y, z)
-        positions = env.controller.step(
-            action="GetReachablePositions"
-        ).metadata["actionReturn"]
-        # add current position
-        current_position = env.controller.last_event.metadata["agent"]["position"]
-        if not current_position in positions:
-            print("Adding starting position...")
-            positions += [current_position]
-
-        # delete duplicate positions, if any
-        len_before = len(positions)
-        positions = [pos for i, pos in enumerate(positions) if pos not in positions[i+1:]]
-        num_deleted = len_before - len(positions)
-        if num_deleted > 0:
-            print(f"Delete {num_deleted} duplicated positions.")
-        with open('positions.txt', 'w') as f:
-            f.write("\n".join(map(str, positions)))
-
-        positions2 = depth_first_search(env)
-        print("pos1, pos2:", len(positions), len(positions2))
-
-        rotations = [dict(x=0, y=i*90, z=0) for i in range(4)]
-        horizons = [-30, 0, 30]
         self.graph.init_v = env.get_current_agent_state()
 
-        vertices = []
+        print("Doing depth first search on the environment...")
+        vertices = depth_first_search(env, self.graph)
+        with open('agent_states.txt', 'w') as f:
+            f.write("\n".join(map(str, vertices)))
 
-        # get rotations and camera angle of each position
-        print("Extracting a total of", len(positions), "positions...")
-        from tqdm import tqdm
-        for position in tqdm(positions):
-            for rotation in rotations:
-                for horizon in horizons:
-                    env.controller.step(
-                        action="Teleport",
-                        position=position,
-                        rotation=rotation,
-                        horizon=horizon
-                    )
-                    observation = env.controller.last_event.frame
-                    v = (position, rotation, horizon)
-                    self.graph.add_vertex(v, observation)
-                    vertices.append(v)
-
-        print(f"Done extracting {len(positions)} positions.")
         print("Total number of vertices:", len(self.graph.obs))
 
         # reset env to the current scene, if `scene` is None, then
@@ -199,20 +161,19 @@ class EnvGraph:
         return len(self.obs)
 
 
-def depth_first_search(env):
+def depth_first_search(env, graph):
     """
     Perform dfs on the robothor environment, return a list of all possible ```(position, rotation, horizon)```
     """
-    graph = EnvGraph()
-    env.reset(env.get_scene(), randomize=False)
+    env.reset(scene=env.get_scene(), randomize=False)
     actions = range(len(env.all_actions)-1) # omit DONE
     res = []
 
     def _dfs_helper(v):
         if v in graph: return
         res.append(v)
-        graph.add_vertex(v, None) # dummy observation
-        for a in actions:
+        graph.add_vertex(v, env.get_last_obs())
+        for action in actions:
             _, _, terminate, truncate, metadata = env.step(action)
             pos, rot, hor = env.get_current_agent_state()
             next  = (pos, rot, hor)
