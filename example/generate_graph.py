@@ -3,10 +3,10 @@ import gym
 
 
 list_target_object = [
-    "GarbageCan",
-    # "HousePlant",
-    # "Laptop",
-    # "Mug"
+    # "GarbageCan",
+    "HousePlant",
+    "Laptop",
+    "Mug"
 ]
 
 if __name__ == "__main__":
