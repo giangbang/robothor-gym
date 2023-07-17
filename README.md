@@ -12,7 +12,7 @@ apt upgrade
 sudo apt install  pciutils
 ```
 
-If error relating to X server with GLX occurs, try to run the above code several times might fix it. 
+If error relating to X server with GLX occurs, try to run the above code several times might fix it.
 
 Finally, install the python requirement
 ```
@@ -20,7 +20,7 @@ git clone https://github.com/giangbang/robothor-gym
 cd robothor_gym
 pip install .
 ```
-or directly from pip 
+or directly from pip
 ```
 pip install git+https://github.com/giangbang/robothor-gym
 ```
@@ -38,13 +38,13 @@ The list of all actions are `MoveAhead`,
             `RotateRight`,
             `MoveLeft`,
             `MoveBack`,
-            `LookUp`, 
+            `LookUp`,
             `LookDown`,
             `Done`.
 Rotate actions rotate the robot's camera 90 degrees (can be changed). Move actions move the robot forward/backward a small distance depending on the `gridSize`, LookUp/Down shift the view of vertical angle camera 30 degree up/down
 
 ### Rewards
-All environments are spare reward, agent receives reward = 1 when it finds the target object in the scene, each task requires the robot to find a specific object that is encoded in the name of the environment, for example `robothor-apple`. 
+All environments are spare reward, agent receives reward = 1 when it finds the target object in the scene, each task requires the robot to find a specific object that is encoded in the name of the environment, for example `robothor-apple`.
 
 The success criteria is defined to be similar to the criteria in `Robothor` challenge, more detail can be found in  [this doc](https://ai2thor.allenai.org/robothor/documentation/#evaluation).
 To summarize, a navigation episode is considered successful if both of the following criteria are met:
@@ -72,13 +72,13 @@ print(f"Total reward: {tot_reward}")
 
 ## Precompute environment
 
-Since rendering frames in robothor takes a long time, a pre-rendered version of this environment is provided in `robothor_preload.py`. In this version, all the states of the environment is visited by brute force and all the observations are cached, a graph of the underlying dynamic is also built. At training time, we simply output the cached image observations
+Since rendering frames in `robothor` takes a _long time_, a pre-rendered version of this environment is provided in `robothor_preload.py`. In this version, all the states of the environment is visited by brute force and all the observations are cached, a graph of the underlying dynamic is also built. At training time, we simply output the cached image observations. In this way, raw performance can reach about 60k fps on Google Colab (compared to 15fps running simulation on the same machine).
 ```python
 import robothor_env
 import gym
 
 env = gym.make("robothor-precompute")
-env.build_graph()
+env.build_graph(scene=None) # build the graph takes roughly 1 hour on Google Colab
 env.save_graph("graph.pkl")
 
 del env
