@@ -49,8 +49,8 @@ class AI2Thor_Preload(gym.Env):
         self.graph.env_params = copy.deepcopy(env.env_params)
         self.graph.init_v = env.get_current_agent_state()
 
-        print("Doing depth first search on the environment...")
-        vertices = depth_first_search(env, self.graph)
+        print("Doing breath first search on the environment...")
+        vertices = breath_first_search(env, self.graph)
         with open('agent_states.txt', 'w') as f:
             f.write("\n".join(map(str, vertices)))
 
@@ -161,7 +161,7 @@ class EnvGraph:
         return len(self.obs)
 
 
-def depth_first_search(env, graph):
+def breath_first_search(env, graph):
     """
     Perform dfs on the robothor environment, return a list of all possible ```(position, rotation, horizon)```
     """
@@ -169,23 +169,28 @@ def depth_first_search(env, graph):
     actions = range(len(env.all_actions)-1) # omit DONE
     res = []
 
-    def _dfs_helper(v):
-        if v in graph: return
+    from collections import deque
+    q = deque()
+    q.append(env.get_current_agent_state())
+    graph.add_vertex(env.get_current_agent_state(), env.get_last_obs())
+
+    while len(q):
+        v = q.popleft()
         res.append(v)
-        graph.add_vertex(v, env.get_last_obs())
         for action in actions:
-            _, _, terminate, truncate, metadata = env.step(action)
-            pos, rot, hor = env.get_current_agent_state()
-            next  = (pos, rot, hor)
-            _dfs_helper(next)
             env.controller.step(
                 action="Teleport",
                 position=v[0],
                 rotation=v[1],
                 horizon=v[2]
             )
-
-    _dfs_helper(env.get_current_agent_state())
+            env.step(action)
+            pos, rot, hor = env.get_current_agent_state()
+            next  = (pos, rot, hor)
+            if next in graph:
+                continue
+            q.append(next)
+            graph.add_vertex(next, env.get_last_obs())
     return res
 
 from gym.envs.registration import register
