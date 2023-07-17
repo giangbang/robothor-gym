@@ -69,3 +69,28 @@ while True:
 print(f"Total number of timestep: {n_env_step}")
 print(f"Total reward: {tot_reward}")
 ```
+
+## Precompute environment
+
+Since rendering frames in robothor takes a long time, a pre-rendered version of this environment is provided in `robothor_preload.py`. In this version, all the states of the environment is visited by brute force and all the observations are cached, a graph of the underlying dynamic is also built. At training time, we simply output the cached image observations
+```python
+import robothor_env
+import gym
+
+env = gym.make("robothor-precompute")
+env.build_graph()
+env.save_graph("graph.pkl")
+
+del env
+
+env = gym.make("robothor-precompute", precompute_file="graph.pkl")
+# or the graph can be loaded by using `env.load_graph("graph.pkl")`
+tot_reward=0
+while True:
+    obs, reward, terminated, truncated, _ = env.step(env.action_space.sample())
+    tot_reward += reward
+    if terminated or truncated:
+        break
+
+print(f"Total reward: {tot_reward}")
+```
