@@ -35,6 +35,7 @@ class AI2Thor_Preload(gym.Env):
 
     def build_graph(self, target_object="Apple", **kwargs):
         import robothor_env
+        self.graph = EnvGraph()
         kwargs.update(randomize=False)
         env = gym.make("robothor-"+target_object.lower(), **kwargs)
         print("Scene:", env.get_scene())
