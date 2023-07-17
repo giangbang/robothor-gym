@@ -111,7 +111,7 @@ class AI2Thor(gym.Env):
             gridSize=gridSize
         )
         self.randomize = randomize
-        self.target_object=target_object
+        self.target_object=target_object.lower()
         assert target_object in TARGET_OBJECT_TYPES
         self.all_actions = [
             "MoveAhead",
@@ -170,7 +170,7 @@ class AI2Thor(gym.Env):
 
     def check_find_target(self, metadata):
         for obj in metadata["objects"]:
-            if obj["objectType"].lower() == self.target_object.lower():
+            if obj["objectType"].lower() == self.target_object:
                 if obj["distance"] <= 1 and obj["visible"]:
                     return True
         return False

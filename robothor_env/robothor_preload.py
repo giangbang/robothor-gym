@@ -164,12 +164,12 @@ def breath_first_search(env, graph):
                 rotation=v[1],
                 horizon=v[2]
             )
-            _, _, terminate, truncate, _ = env.step(action)
+            env.step(action)
             pos, rot, hor = env.get_current_agent_state()
             next  = (pos, rot, hor)
             graph.add_edge(v, next, action)
-            if terminate or truncate:
-                self.graph.add_terminal(v)
+            if env.check_success(env.controller.last_event.metadata):
+                graph.add_terminal(v)
             if next in graph:
                 continue
             q.append(next)
