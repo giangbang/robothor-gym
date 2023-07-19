@@ -1,11 +1,16 @@
+import os
+import numpy as np
+import random
+
 try:
     import cPickle as pickle
 except ModuleNotFoundError:
     import pickle
-import os
-import numpy as np
-import random
-import gym
+try:
+    import gymnasium as gym
+except ModuleNotFoundError:
+    import gym
+
 import copy
 
 
@@ -180,7 +185,7 @@ from gym.envs.registration import register
 register(
     id="robothor-precompute",
     entry_point=__name__ + ":AI2Thor_Preload",
-    max_episode_steps=1000,
+    max_episode_steps=100,
 )
 
 if __name__ == "__main__":

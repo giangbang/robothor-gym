@@ -4,7 +4,10 @@ import numpy as np
 import random
 
 from ai2thor.controller import Controller
-import gym
+try:
+    import gymnasium as gym
+except ModuleNotFoundError:
+    import gym
 from ai2thor.util.metrics import (
     path_distance
 )
@@ -181,7 +184,7 @@ for obj in TARGET_OBJECT_TYPES:
     register(
         id=f"robothor-{obj.lower()}",
         entry_point=__name__ + ":AI2Thor",
-        max_episode_steps=1000,
+        max_episode_steps=100,
         kwargs={"target_object": obj, "height": 84, "width": 84}
     )
 
