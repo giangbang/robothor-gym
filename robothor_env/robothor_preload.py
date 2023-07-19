@@ -129,6 +129,11 @@ class EnvGraph:
         with open(path, 'rb') as inp:
             tmp_dict = pickle.load(inp)
         self.__dict__.update(tmp_dict)
+        # resolve conflicting library
+        # converting between gym.spaces and gymnasium.spaces and vice versa
+        self.action_space = gym.spaces.Discrete(self.action_space.n)
+        self.observation_space = gym.spaces.Box(low=self.observation_space.low,
+                                                high=self.observation_space.high)
         return self
 
     def __contains__(self, vertex):
@@ -142,7 +147,6 @@ class EnvGraph:
 
     def __len__(self):
         return len(self.obs)
-
 
 def breath_first_search(env, graph):
     """
