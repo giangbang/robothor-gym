@@ -70,7 +70,6 @@ setup(
     description = ("Robothor environment for RL with gym API"),
     packages=find_packages(),
     install_requires=[
-        "gym",
         "numpy",
         "ai2thor"
     ],
