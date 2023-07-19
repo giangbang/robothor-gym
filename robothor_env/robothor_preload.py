@@ -181,8 +181,7 @@ def breath_first_search(env, graph):
             graph.add_vertex(next, env.get_last_obs())
     return res
 
-from gym.envs.registration import register
-register(
+gym.envs.registration.register(
     id="robothor-precompute",
     entry_point=__name__ + ":AI2Thor_Preload",
     max_episode_steps=100,

@@ -178,10 +178,8 @@ class AI2Thor(gym.Env):
                     return True
         return False
 
-from gym.envs.registration import register
-
 for obj in TARGET_OBJECT_TYPES:
-    register(
+    gym.envs.registration.register(
         id=f"robothor-{obj.lower()}",
         entry_point=__name__ + ":AI2Thor",
         max_episode_steps=100,
