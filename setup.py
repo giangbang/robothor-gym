@@ -61,8 +61,9 @@ def start_xserver() -> None:
 
     # os.system("sudo ai2thor-xorg start")
 
-start_xserver()
-
+setup_robothor = os.environ.get("SETUP_ROBOTHOR", False)
+if setup_robothor:
+    start_xserver()
 
 setup(
     name = "robothor-gym",
