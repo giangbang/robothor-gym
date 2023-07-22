@@ -51,13 +51,13 @@ def start_xserver() -> None:
 
     os.environ["DISPLAY"] = ":1"
     
-    os.system("apt --fix-broken install")
+    os.system("apt-get --fix-broken install")
 
-    os.system("sudo apt install libvulkan1 mesa-vulkan-drivers vulkan-utils")
+    os.system("apt-get install libvulkan1 mesa-vulkan-drivers vulkan-utils")
     
-    os.system("apt update & apt upgrade")
+    os.system("apt-get update & apt upgrade")
 
-    os.system("sudo apt install pciutils")
+    os.system("apt-get install pciutils")
 
     # os.system("sudo ai2thor-xorg start")
 

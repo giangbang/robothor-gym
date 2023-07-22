@@ -18,12 +18,13 @@ Finally, install the python requirement
 ```
 git clone https://github.com/giangbang/robothor-gym
 cd robothor_gym
-pip install .
+SETUP_ROBOTHOR=1 pip install .
 ```
 or directly from pip
 ```
-pip install git+https://github.com/giangbang/robothor-gym
+SETUP_ROBOTHOR=1 pip install git+https://github.com/giangbang/robothor-gym
 ```
+`SETUP_ROBOTHOR=1` will create a virtual display and connect it to the display output of `robothor`. If you do not want to set this up (e.g when using precomputed environments only), omit this variable.
 
 The currently available environments are object navigation tasks, using mostly default parameters from `Robothor`.
 
