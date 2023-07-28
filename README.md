@@ -54,7 +54,7 @@ To summarize, a navigation episode is considered successful if both of the follo
 
 ### Code example
 ```python
-import gym
+import gym # if you have gymnasium, priotize using gymnasium
 import robothor_env # required to register new gym envs
 
 env = gym.make("robothor-apple")
@@ -94,5 +94,9 @@ while True:
         break
 
 print(f"Total reward: {tot_reward}")
+```
+or run the example script with the target object in argument
+```bash
+python example/generate_graph.py --target-obj Mug
 ```
 Examples of the pre-built graph files can be downloaded from this [kaggle dataset](https://www.kaggle.com/datasets/banggiangle/robothor-graph-files).
