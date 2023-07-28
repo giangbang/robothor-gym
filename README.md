@@ -104,3 +104,4 @@ python example/generate_graph.py --target-obj Mug
 ```
 Examples of the pre-built graph files can be downloaded from this [kaggle dataset](https://www.kaggle.com/datasets/banggiangle/robothor-graph-files).
 Using precomputed files, we can gain access to the (precomputed) shortest distances from each state to the goal states, and use them to provide more instructive reward signal.
+![Position Grid](./images/grids.png)

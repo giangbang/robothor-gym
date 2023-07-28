@@ -45,21 +45,35 @@ class AI2Thor_Preload(gym.Env):
     def target_obj(self):
         return self.graph.target_obj
 
-    def screenshot(self, graph, env = None):
+    def screenshot(self, graph, filename=None, env = None):
         if env is None:
             import robothor_env
-            env = gym.make("robothor-"+graph.target_obj.lower(), scene=graph.scene, width=256, height=256)
+            env = gym.make("robothor-"+graph.target_obj.lower(), scene=graph.scene, width=256, height=132, randomize=False)
 
         event = env.controller.step(
             action="AddThirdPartyCamera",
-            position=dict(x=-1.25, y=1, z=-1),
+            position=dict(x=5.5, y=15, z=-2.65),
             rotation=dict(x=90, y=0, z=0),
-            fieldOfView=90
+            fieldOfView=20
         )
+        center_grid = np.array([5.5, -2.65])
 
-        graph.raw_screenshot = event.third_party_camera_frames
+        graph.raw_screenshot = event.third_party_camera_frames[0].astype(np.uint8).copy() 
+        all_points = list(map(lambda x : np.array(x[0])/10000., graph.obs.keys()))
+        terminal_points = list(map(lambda x : np.array(x[0])/10000., graph.terminal))
+        
+        def transform(p):
+            return np.abs(np.array([(p[0]-0.4) * 265/2/5.3, (p[2]+0.15) * 140/2/2.61])).astype(np.int)
+
         import cv2
-        cv2.imwrite("a.png", graph.raw_screenshot)
+        for point in all_points:
+            graph.raw_screenshot = cv2.circle(graph.raw_screenshot, transform(point), radius=1, color=(0, 0, 255), thickness=-1)
+        for point in terminal_points:
+            graph.raw_screenshot = cv2.circle(graph.raw_screenshot, transform(point), radius=1, color=(255, 0, 0), thickness=-1)
+
+        if filename is None:
+            filename = f"{graph.scene}_{graph.target_obj}.png"
+        cv2.imwrite(filename, cv2.cvtColor(graph.raw_screenshot, cv2.COLOR_RGB2BGR))
 
     def build_graph(self, target_object="Apple", **kwargs):
         import robothor_env
