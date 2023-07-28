@@ -15,6 +15,14 @@ import copy
 
 
 class AI2Thor_Preload(gym.Env):
+    # taken from https://allenact.org/tutorials/training-a-pointnav-model/
+    REWARD_CONFIG = {
+        "step_penalty": -0.01,
+        "goal_success_reward": 10.0,
+        "failed_stop_reward": 0.0, # not used
+        "shaping_weight": 1.0,
+    }
+
     def __init__(self, precompute_file=None):
         super().__init__()
         self.graph = EnvGraph()
@@ -58,6 +66,7 @@ class AI2Thor_Preload(gym.Env):
         vertices = breath_first_search(env, self.graph)
         with open('agent_states.txt', 'w') as f:
             f.write("\n".join(map(str, vertices)))
+        print("Done.")
 
         print("Total number of vertices:", len(self.graph.obs))
 
@@ -77,10 +86,16 @@ class AI2Thor_Preload(gym.Env):
     def step(self, action):
         self.current_v = self.graph.next_vertex(self.current_v, action)
         done = action == self.action_space.n - 1 and self.graph.check_terminal(self.current_v)
-        return self.graph.get_obs(self.current_v), float(done), done, False, {}
+        reward = self._reward(self.current_v, done)
+        return self.graph.get_obs(self.current_v), reward, done, False, {}
 
     def render(self, render_mode="rgb_array"):
         return self.graph.get_obs(self.current_v)
+
+    def _reward(self, current_vertex, done):
+        reward = self.REWARD_CONFIG["step_penalty"] if not done else self.REWARD_CONFIG["goal_success_reward"]
+        reward -= self.graph.get_distance_to_goal(current_vertex) * self.REWARD_CONFIG["shaping_weight"]
+        return reward
 
 class EnvGraph:
     def __init__(self):
@@ -94,10 +109,37 @@ class EnvGraph:
         self.scene = None
         self.target_obj = None
         self.env_params = None
+        self.distances = None
 
     def get_obs(self, vertex):
         vertex = self.convert_vertex(vertex)
         return self.obs[vertex]
+
+    def get_distance_to_goal(self, vertex):
+        vertex = self.convert_vertex(vertex)
+        return self.distances[vertex]
+
+    def calculate_shortest_distance_to_goal(self):
+        print("Finding shortest distances from each state to goal...")
+        from collections import deque
+        q = deque()
+        self.distances = dict()
+        assert self.terminal is not None
+
+        q.extend(self.terminal)
+        current_distance = 0
+        while q:
+            q_size = len(q)
+            for _ in range(q_size):
+                v = q.popleft()
+                self.distances[v] = current_distance
+                for nei in self.adj[v].values():
+                    nei = self.convert_vertex(nei)
+                    if nei not in self.distances:
+                        self.distances[nei] = 0 # explored, in queue, overrided later
+                        q.append(nei)
+            current_distance += 1
+        print("Done.")
 
     def next_vertex(self, vertex, edge):
         vertex = self.convert_vertex(vertex)
@@ -134,6 +176,10 @@ class EnvGraph:
         self.action_space = gym.spaces.Discrete(self.action_space.n)
         self.observation_space = gym.spaces.Box(low=self.observation_space.low,
                                                 high=self.observation_space.high)
+        # calculate the distances, if not available
+        if self.distances is None or len(self.distances) == 0:
+            print("Precompute shortest distances are missing in the saved file.")
+            self.calculate_shortest_distance_to_goal()
         return self
 
     def __contains__(self, vertex):
@@ -178,7 +224,7 @@ def breath_first_search(env, graph):
             next  = (pos, rot, hor)
             graph.add_edge(v, next, action)
             if env.check_success(env.controller.last_event.metadata):
-                graph.add_terminal(v)
+                graph.add_terminal(v) # v and next are the same, since "Done" does not alter env state
             if next in graph:
                 continue
             q.append(next)
@@ -188,7 +234,7 @@ def breath_first_search(env, graph):
 gym.envs.registration.register(
     id="robothor-precompute",
     entry_point=__name__ + ":AI2Thor_Preload",
-    max_episode_steps=100,
+    max_episode_steps=500,
 )
 
 if __name__ == "__main__":

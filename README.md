@@ -52,6 +52,9 @@ To summarize, a navigation episode is considered successful if both of the follo
 - The specified object category is within 1 meter (Euclidean distance) from the agent's camera, and the agent issues the STOP action, which indicates the termination of the episode.
 - The object is visible from in the final action's frame.
 
+
+In the precomputed environments, the reward is similar to [pointnav env](https://allenact.org/tutorials/training-a-pointnav-model/#config-file-setup), with additional reward signal from the shortest distance from each point in the scene.
+
 ### Code example
 ```python
 import gym # if you have gymnasium, priotize using gymnasium
@@ -100,3 +103,4 @@ or run the example script with the target object in argument
 python example/generate_graph.py --target-obj Mug
 ```
 Examples of the pre-built graph files can be downloaded from this [kaggle dataset](https://www.kaggle.com/datasets/banggiangle/robothor-graph-files).
+Using precomputed files, we can gain access to the (precomputed) shortest distances from each state to the goal states, and use them to provide more instructive reward signal.
