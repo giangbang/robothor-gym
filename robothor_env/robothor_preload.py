@@ -260,6 +260,7 @@ def breath_first_search(env, graph):
             graph.add_edge(v, next, action)
             if env.check_success(env.controller.last_event.metadata):
                 graph.add_terminal(v) # v and next are the same, since "Done" does not alter env state
+                graph.add_terminal(next)
             if next in graph:
                 continue
             q.append(next)
