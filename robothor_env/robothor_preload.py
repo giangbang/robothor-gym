@@ -70,7 +70,7 @@ class AI2Thor_Preload(gym.Env):
     def save_graph(self, path_to_save_file: str):
         self.graph.save(path_to_save_file)
 
-    def reset(self, seed=None):
+    def reset(self, seed=None, **kwargs):
         self.current_v = self.graph.init_v
         return self.graph.get_obs(self.current_v), {}
 

@@ -157,7 +157,7 @@ class AI2Thor(gym.Env):
         metadata = self.controller.last_event.metadata["agent"]
         return (metadata["position"], metadata["rotation"], metadata["cameraHorizon"])
 
-    def reset(self, scene=None, randomize=None, seed=None):
+    def reset(self, scene=None, randomize=None, seed=None, **kwargs):
         if scene:
             self.scene = scene
         if randomize:
