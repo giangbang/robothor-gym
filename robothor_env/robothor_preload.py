@@ -45,6 +45,21 @@ class AI2Thor_Preload(gym.Env):
     def target_obj(self):
         return self.graph.target_obj
 
+    def screenshot(self, graph, env = None):
+        if env is None:
+            import robothor_env
+            env = gym.make("robothor-"+graph.target_obj.lower(), scene=graph.scene, width=256, height=256)
+
+        event = env.controller.step(
+            action="AddThirdPartyCamera",
+            position=dict(x=-1.25, y=1, z=-1),
+            rotation=dict(x=90, y=0, z=0),
+            fieldOfView=90
+        )
+
+        graph.raw_screenshot = event.third_party_camera_frames
+        import cv2
+        cv2.imwrite("a.png", graph.raw_screenshot)
 
     def build_graph(self, target_object="Apple", **kwargs):
         import robothor_env
@@ -69,6 +84,12 @@ class AI2Thor_Preload(gym.Env):
         print("Done.")
 
         print("Total number of vertices:", len(self.graph.obs))
+
+        print("Finding shortest all vertices distances...")
+        self.graph.calculate_shortest_distance_to_goal()
+        print("Done.")
+
+        self.screenshot(self.graph)
 
         return self.graph
 
@@ -149,7 +170,7 @@ class EnvGraph:
         vertex = self.convert_vertex(vertex)
         assert vertex not in self.obs
         self.adj[vertex] = dict()
-        self.obs[vertex] = obs
+        self.obs[vertex] = obs.astype(np.uint8)
 
     def add_terminal(self, vertex):
         vertex = self.convert_vertex(vertex)
