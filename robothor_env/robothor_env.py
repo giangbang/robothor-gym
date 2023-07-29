@@ -136,7 +136,7 @@ class AI2Thor(gym.Env):
         return self._obs(self.controller.last_event)
 
     def _obs(self, event):
-        obs = event.frame
+        obs = event.frame.astype(np.uint8)
         if self.depth:
             obs = np.concatenate((obs, event.depth_frame), -1)
         return obs

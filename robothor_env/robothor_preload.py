@@ -49,7 +49,8 @@ class AI2Thor_Preload(gym.Env):
     def screenshot(self, graph, filename=None, env = None):
         if env is None:
             import robothor_env
-            env = gym.make("robothor-"+graph.target_obj.lower(), scene=graph.scene, width=256, height=132, randomize=False)
+            env = gym.make("robothor-"+graph.target_obj.lower(), scene=graph.scene, 
+                    width=256, height=132, randomize=False)
 
         event = env.controller.step(
             action="AddThirdPartyCamera",
@@ -63,13 +64,16 @@ class AI2Thor_Preload(gym.Env):
         terminal_points = list(map(lambda x : np.array(x[0])/10000., graph.terminal))
         
         def transform(p):
-            return np.abs(np.array([(p[0]-0.4) * 265/2/5.3, (p[2]+0.15) * 140/2/2.61])).astype(np.int)
+            return np.abs(np.array([(p[0]-0.4) * 265/2/5.3, 
+                    (p[2]+0.15) * 140/2/2.61])).astype(np.int)
 
         import cv2
         for point in all_points:
-            graph.raw_screenshot = cv2.circle(graph.raw_screenshot, transform(point), radius=1, color=(0, 0, 255), thickness=-1)
+            graph.raw_screenshot = cv2.circle(graph.raw_screenshot, 
+                    transform(point), radius=1, color=(0, 0, 255), thickness=-1)
         for point in terminal_points:
-            graph.raw_screenshot = cv2.circle(graph.raw_screenshot, transform(point), radius=1, color=(255, 0, 0), thickness=-1)
+            graph.raw_screenshot = cv2.circle(graph.raw_screenshot, 
+                    transform(point), radius=1, color=(255, 0, 0), thickness=-1)
 
         if filename is None:
             filename = f"{graph.scene}_{graph.target_obj}.png"
@@ -130,9 +134,10 @@ class AI2Thor_Preload(gym.Env):
         return self.graph.get_obs(self.current_v)
 
     def _reward(self, current_vertex, done, reward_shaping):
-        reward = self.REWARD_CONFIG["step_penalty"] if not done else self.REWARD_CONFIG["goal_success_reward"]
+        reward = self.REWARD_CONFIG["step_penalty"] \
+                if not done else self.REWARD_CONFIG["goal_success_reward"]
         if reward_shaping:
-            reward -= self.graph.get_distance_to_goal(current_vertex) \
+            reward -= self.graph.get_distance_to_goal(current_vertex) * \
                     self.REWARD_CONFIG["shaping_weight"] * self.graph.env_params["gridSize"]
         return reward
 
@@ -227,7 +232,8 @@ class EnvGraph:
 
     def convert_vertex(self, vertex):
         vertex[1]["y"] = int(round(vertex[1]["y"] / 90) * 90) % 360
-        t = (tuple(vertex[0].values()), tuple(map(int, vertex[1].values())), (round(vertex[2]/30)*30,))
+        t = (tuple(vertex[0].values()), tuple(map(int, vertex[1].values())), \
+                (round(vertex[2]/30)*30,))
         return tuple(tuple(map(lambda x : int(x*10000), tup)) for tup in t)
 
     def __len__(self):
@@ -235,7 +241,8 @@ class EnvGraph:
 
 def breath_first_search(env, graph):
     """
-    Perform dfs on the robothor environment, return a list of all possible ```(position, rotation, horizon)```
+    Perform dfs on the robothor environment, return a list of all possible 
+    ```(position, rotation, horizon)```
     """
     # reset env to the current scene, if `scene` is None, then
     # the env will reset to other random scene
@@ -247,6 +254,9 @@ def breath_first_search(env, graph):
     q = deque()
     q.append(env.get_current_agent_state())
     graph.add_vertex(env.get_current_agent_state(), env.get_last_obs())
+    
+    env = env.unwrapped
+    assert type(env) is not gym.wrappers.TimeLimit
 
     while len(q):
         v = q.popleft()
@@ -258,7 +268,7 @@ def breath_first_search(env, graph):
                 rotation=v[1],
                 horizon=v[2]
             )
-            env.step(action, reward_shaping=False)
+            env.step(action)
             pos, rot, hor = env.get_current_agent_state()
             next  = (pos, rot, hor)
             graph.add_edge(v, next, action)
