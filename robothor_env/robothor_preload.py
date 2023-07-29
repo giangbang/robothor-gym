@@ -46,11 +46,11 @@ class AI2Thor_Preload(gym.Env):
     def target_obj(self):
         return self.graph.target_obj
 
-    def screenshot(self, graph, filename=None, env = None):
-        if env is None:
-            import robothor_env
-            env = gym.make("robothor-"+graph.target_obj.lower(), scene=graph.scene, 
-                    width=256, height=132, randomize=False)
+    def screenshot(self, graph, filename=None):
+        w, h = 512, 256
+        import robothor_env
+        env = gym.make("robothor-"+graph.target_obj.lower(), scene=graph.scene, 
+                width=w, height=h, randomize=False)
 
         event = env.controller.step(
             action="AddThirdPartyCamera",
@@ -64,16 +64,17 @@ class AI2Thor_Preload(gym.Env):
         terminal_points = list(map(lambda x : np.array(x[0])/10000., graph.terminal))
         
         def transform(p):
-            return np.abs(np.array([(p[0]-0.4) * 265/2/5.3, 
-                    (p[2]+0.15) * 140/2/2.61])).astype(np.int)
+            return np.abs(np.array([(p[0]-0.3) * w/2/5.2, 
+                    (p[2]+0.1) * h/2/2.5])).astype(int)
 
         import cv2
+        r = round(w/256.)
         for point in all_points:
             graph.raw_screenshot = cv2.circle(graph.raw_screenshot, 
-                    transform(point), radius=1, color=(0, 0, 255), thickness=-1)
+                    transform(point), radius=r, color=(0, 0, 255), thickness=-1)
         for point in terminal_points:
             graph.raw_screenshot = cv2.circle(graph.raw_screenshot, 
-                    transform(point), radius=1, color=(255, 0, 0), thickness=-1)
+                    transform(point), radius=r, color=(255, 0, 0), thickness=-1)
 
         if filename is None:
             filename = f"{graph.scene}_{graph.target_obj}.png"
