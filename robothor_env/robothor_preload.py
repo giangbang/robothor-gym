@@ -23,9 +23,10 @@ class AI2Thor_Preload(gym.Env):
         "shaping_weight": 1.0,
     }
 
-    def __init__(self, precompute_file=None, **kwargs):
+    def __init__(self, precompute_file=None, reward_shaping:bool=True, **kwargs):
         super().__init__()
         self.graph = EnvGraph()
+        self.reward_shaping = reward_shaping
         if precompute_file:
             self.load_graph(precompute_file)
 
@@ -112,23 +113,27 @@ class AI2Thor_Preload(gym.Env):
     def save_graph(self, path_to_save_file: str):
         self.graph.save(path_to_save_file)
 
-    def reset(self, seed=None, **kwargs):
+    def reset(self, seed=None, reward_shaping=None, **kwargs):
         self.current_v = self.graph.init_v
+        if reward_shaping is not None:
+            self.reward_shaping = reward_shaping
         return self.graph.get_obs(self.current_v), {}
 
-    def step(self, action):
+    def step(self, action, reward_shaping = None):
         self.current_v = self.graph.next_vertex(self.current_v, action)
         done = action == self.action_space.n - 1 and self.graph.check_terminal(self.current_v)
-        reward = self._reward(self.current_v, done)
+        reward = self._reward(self.current_v, done, reward_shaping \
+                if reward_shaping is not None else self.reward_shaping)
         return self.graph.get_obs(self.current_v), reward, done, False, {}
 
     def render(self, render_mode="rgb_array"):
         return self.graph.get_obs(self.current_v)
 
-    def _reward(self, current_vertex, done):
+    def _reward(self, current_vertex, done, reward_shaping):
         reward = self.REWARD_CONFIG["step_penalty"] if not done else self.REWARD_CONFIG["goal_success_reward"]
-        reward -= self.graph.get_distance_to_goal(current_vertex) * \
-                self.REWARD_CONFIG["shaping_weight"] * self.graph.env_params["gridSize"]
+        if reward_shaping:
+            reward -= self.graph.get_distance_to_goal(current_vertex) \
+                    self.REWARD_CONFIG["shaping_weight"] * self.graph.env_params["gridSize"]
         return reward
 
 class EnvGraph:
@@ -253,7 +258,7 @@ def breath_first_search(env, graph):
                 rotation=v[1],
                 horizon=v[2]
             )
-            env.step(action)
+            env.step(action, reward_shaping=False)
             pos, rot, hor = env.get_current_agent_state()
             next  = (pos, rot, hor)
             graph.add_edge(v, next, action)
