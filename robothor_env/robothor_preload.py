@@ -129,7 +129,8 @@ class AI2Thor_Preload(gym.Env):
 
     def _reward(self, current_vertex, done):
         reward = self.REWARD_CONFIG["step_penalty"] if not done else self.REWARD_CONFIG["goal_success_reward"]
-        reward -= self.graph.get_distance_to_goal(current_vertex) * self.REWARD_CONFIG["shaping_weight"]
+        reward -= self.graph.get_distance_to_goal(current_vertex) * \
+                self.REWARD_CONFIG["shaping_weight"] * self.graph.env_params["gridSize"]
         return reward
 
 class EnvGraph:
