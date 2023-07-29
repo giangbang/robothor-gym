@@ -23,7 +23,7 @@ class AI2Thor_Preload(gym.Env):
         "shaping_weight": 1.0,
     }
 
-    def __init__(self, precompute_file=None):
+    def __init__(self, precompute_file=None, **kwargs):
         super().__init__()
         self.graph = EnvGraph()
         if precompute_file:
@@ -56,7 +56,6 @@ class AI2Thor_Preload(gym.Env):
             rotation=dict(x=90, y=0, z=0),
             fieldOfView=20
         )
-        center_grid = np.array([5.5, -2.65])
 
         graph.raw_screenshot = event.third_party_camera_frames[0].astype(np.uint8).copy() 
         all_points = list(map(lambda x : np.array(x[0])/10000., graph.obs.keys()))
@@ -77,7 +76,6 @@ class AI2Thor_Preload(gym.Env):
 
     def build_graph(self, target_object="Apple", **kwargs):
         import robothor_env
-        from tqdm import tqdm
 
         self.graph = EnvGraph()
         kwargs.update(randomize=False)
