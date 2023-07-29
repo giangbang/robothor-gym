@@ -1,5 +1,8 @@
 import robothor_env
-import gym
+try:
+    import gymnasium as gym
+except ModuleNotFoundError:
+    import gym
 import argparse
 
 

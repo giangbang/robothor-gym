@@ -1,5 +1,9 @@
 import robothor_env
-import gym
+try:
+    import gymnasium as gym
+except ModuleNotFoundError:
+    import gym
+
 
 envs = [gym.make("robothor-garbagecan"), gym.make("robothor-houseplant")]
 import time
