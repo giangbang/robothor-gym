@@ -65,7 +65,7 @@ def main():
     video = cv2.VideoWriter(video_name, 0, 1, (width,height))
 
     for image in images:
-        video.write(image)
+        video.write(cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
 
     cv2.destroyAllWindows()
     video.release()

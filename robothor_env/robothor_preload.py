@@ -23,10 +23,12 @@ class AI2Thor_Preload(gym.Env):
         "shaping_weight": 1.0,
     }
 
-    def __init__(self, precompute_file=None, reward_shaping:bool=True, **kwargs):
+    def __init__(self, precompute_file=None, reward_shaping:bool=True, random_start=True, **kwargs):
         super().__init__()
         self.graph = EnvGraph()
         self.reward_shaping = reward_shaping
+        self.random_start = random_start
+        self.all_vertices = None # cached all vertices in a list
         if precompute_file:
             self.load_graph(precompute_file)
 
@@ -119,7 +121,14 @@ class AI2Thor_Preload(gym.Env):
         self.graph.save(path_to_save_file)
 
     def reset(self, seed=None, reward_shaping=None, **kwargs):
-        self.current_v = self.graph.init_v
+        if self.random_start:
+            if self.all_vertices is None:
+                self.all_vertices = list(map(
+                    lambda v : self.graph.inverse_vertex(v), self.graph.obs.keys()
+                ))
+            self.current_v = random.choice(self.all_vertices)
+        else:
+            self.current_v = self.graph.init_v
         if reward_shaping is not None:
             self.reward_shaping = reward_shaping
         return self.graph.get_obs(self.current_v), {}
@@ -220,7 +229,8 @@ class EnvGraph:
         # converting between gym.spaces and gymnasium.spaces and vice versa
         self.action_space = gym.spaces.Discrete(self.action_space.n)
         self.observation_space = gym.spaces.Box(low=self.observation_space.low,
-                                                high=self.observation_space.high)
+                                                high=self.observation_space.high, 
+                                                dtype=np.uint8)
         # calculate the distances, if not available
         if self.distances is None or len(self.distances) == 0:
             print("Precompute shortest distances are missing in the saved file.")
@@ -236,6 +246,11 @@ class EnvGraph:
         t = (tuple(vertex[0].values()), tuple(map(int, vertex[1].values())), \
                 (round(vertex[2]/30)*30,))
         return tuple(tuple(map(lambda x : int(x*10000), tup)) for tup in t)
+
+    def inverse_vertex(self, vertex):
+        ret = tuple(tuple(map(lambda x : x/10000, tup)) for tup in t)
+        ret[-1] = ret[-1][0]
+        return ret
 
     def __len__(self):
         return len(self.obs)
