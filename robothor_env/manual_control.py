@@ -3,11 +3,13 @@
 
 from __future__ import annotations
 
-import gymnasium as gym
+try:
+    import gymnasium as gym
+except ModuleNotFoundError:
+    import gym
 import pygame
 import cv2
 import numpy as np
-from gymnasium import Env
 
 import robothor_env
 
@@ -21,7 +23,7 @@ class ManualControl:
 
     def __init__(
         self,
-        env: Env,
+        env: gym.Env,
         seed=None,
     ) -> None:
         self.env = env

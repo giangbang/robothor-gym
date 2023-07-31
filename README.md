@@ -107,5 +107,16 @@ Examples of the pre-built graph files can be downloaded from this [kaggle datase
 Using precomputed files, we can gain access to the (precomputed) shortest distances from each state to the goal states, and use them to provide more instructive reward signal.
 ![Position Grid](./images/grids.png)
 ## Manual control
+Run the script
+```
+python -m robothor_env.manual_control --env-id robothor-apple
+```
+To open a new window that allow user input from keyboard. 
+Manually control the robot by pressing `up`, `down`, `left`, and `right` buttons to rotate and `s`, `w` to move backward/forward, respectively.
 
 ## RL Training 
+LSTM-PPO with stable-baselines3
+```
+python ./example/sb3_train.py --precompute-file <precompute-file-path>
+```
+Using the precompute environments (need precomputed graph path)

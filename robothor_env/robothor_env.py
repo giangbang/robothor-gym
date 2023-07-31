@@ -159,9 +159,13 @@ class AI2Thor(gym.Env):
 
     def _obs(self, event):
         obs = event.frame.astype(np.uint8)
+        self.last_observation = obs
         if self.depth:
             obs = np.concatenate((obs, event.depth_frame), -1)
         return obs
+
+    def render(self, **kwargs):
+        return self.last_observation
 
     def step(self, action):
         action = self.all_actions[action]
@@ -173,7 +177,6 @@ class AI2Thor(gym.Env):
 
         self.last_state = self.current_state
         self.current_state = self.get_current_agent_state()
-        self.last_observation = obs
         return obs, reward, done, False, event.metadata
 
     def get_scene(self):
@@ -199,7 +202,6 @@ class AI2Thor(gym.Env):
 
         self.current_state = self.get_current_agent_state()
         self.last_state = None
-        self.last_observation = obs
         return obs, event.metadata
 
     def check_success(self, metadata):
@@ -216,7 +218,7 @@ for obj in TARGET_OBJECT_TYPES:
     gym.envs.registration.register(
         id=f"robothor-{obj.lower()}",
         entry_point=__name__ + ":AI2Thor",
-        max_episode_steps=100,
+        max_episode_steps=500,
         kwargs={"target_object": obj, "height": 84, "width": 84}
     )
 
