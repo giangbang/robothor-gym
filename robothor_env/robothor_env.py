@@ -120,6 +120,7 @@ class AI2Thor(gym.Env):
         randomize: bool=True, 
         gridSize: float=0.25,
         fieldOfView: int=90, # default is 60 in robothor
+        **kwargs,
     ):
         super().__init__()
         self.init_controller(

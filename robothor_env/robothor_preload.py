@@ -23,7 +23,12 @@ class AI2Thor_Preload(gym.Env):
         "shaping_weight": .1,
     }
 
-    def __init__(self, precompute_file=None, reward_shaping:bool=True, random_start=True, **kwargs):
+    def __init__(self, 
+        precompute_file=None, 
+        reward_shaping:bool=True, 
+        random_start=True, 
+        **kwargs
+    ):
         super().__init__()
         self.graph = EnvGraph()
         self.reward_shaping = reward_shaping
@@ -49,6 +54,9 @@ class AI2Thor_Preload(gym.Env):
     @property
     def target_obj(self):
         return self.graph.target_obj
+
+    def get_scene(self):
+        return self.scene
 
     def screenshot(self, graph, filename=None):
         w, h = 512, 256

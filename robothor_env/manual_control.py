@@ -135,7 +135,7 @@ if __name__ == "__main__":
         type=str,
         help="gym environment to load",
         choices=gym.envs.registry.keys(),
-        default="robothor-precompute",
+        default="robothor-apple",
     )
     parser.add_argument(
         "--seed",
@@ -144,14 +144,9 @@ if __name__ == "__main__":
         default=None,
     )
     parser.add_argument(
-        "--target-object",
-        type=str,
-        default="Apple",
-    )
-    parser.add_argument(
         "--scene",
         type=str,
-        default="FloorPlan_Train1_2",
+        default=None,
     )
     parser.add_argument(
         "--precompute-file",
@@ -163,8 +158,10 @@ if __name__ == "__main__":
 
     env = gym.make(
         args.env_id,
-        precompute_file=args.precompute_file
+        precompute_file=args.precompute_file,
+        scene=args.scene,
     )
+    print("Scene:", env.get_scene())
 
     manual_control = ManualControl(env, seed=args.seed)
     manual_control.start()
