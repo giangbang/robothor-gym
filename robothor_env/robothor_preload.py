@@ -260,12 +260,15 @@ class EnvGraph:
         return vertex in self.obs
 
     def convert_vertex(self, vertex):
-        vertex[1]["y"] = int(round(vertex[1]["y"] / 90) * 90) % 360
+        """Convert actual positions of the robot into hashable (immutable) objects."""
+        rotate_degree = self.env_params["rotateStepDegrees"]
+        vertex[1]["y"] = int(round(vertex[1]["y"]/rotate_degree)*rotate_degree) % 360
         t = (tuple(vertex[0].values()), tuple(map(int, vertex[1].values())), \
                 (round(vertex[2]/30)*30,))
         return tuple(tuple(map(lambda x : int(x*10000), tup)) for tup in t)
 
     def inverse_vertex(self, vertex):
+        """Inverse function of ``convert_vertex`` """
         ret = list(tuple(map(lambda x : x/10000, tup)) for tup in vertex)
         ret[-1] = ret[-1][0]
         for i in range(2):
