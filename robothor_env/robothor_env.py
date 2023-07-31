@@ -74,7 +74,16 @@ class AI2Thor(gym.Env):
         if scene: return scene
         return random.choice(SCENE_ROBOTHOR)
 
-    def init_controller(self, scene=None, width=128, height=128, depth=True, target_object="Apple", randomize: bool=True, gridSize:float=0.25):
+    def init_controller(self, 
+        scene=None, 
+        width=128, 
+        height=128, 
+        depth=True, 
+        target_object="Apple", 
+        randomize: bool=True, 
+        gridSize:float=0.25,
+        fieldOfView: int=90,
+    ):
         """
         If scene = None, choose randomly from list of valid training scenes
         """
@@ -90,7 +99,7 @@ class AI2Thor(gym.Env):
             "renderInstanceSegmentation": False,
             "width": width,
             "height": height,
-            "fieldOfView": 60,
+            "fieldOfView": fieldOfView,
             "rotateGaussianSigma": 0.5 if randomize else 0,
             "movementGaussianSigma": 0.005 if randomize else 0,
         }
@@ -102,7 +111,16 @@ class AI2Thor(gym.Env):
         return self.controller
 
 
-    def __init__(self, scene=None, width=128, height=128, depth=False, target_object="Apple", randomize: bool=True, gridSize:float=0.25):
+    def __init__(self, 
+        scene=None, 
+        width=128, 
+        height=128, 
+        depth=False, 
+        target_object: str="Apple", 
+        randomize: bool=True, 
+        gridSize: float=0.25,
+        fieldOfView: int=90, # default is 60 in robothor
+    ):
         super().__init__()
         self.init_controller(
             scene=scene,
@@ -111,7 +129,8 @@ class AI2Thor(gym.Env):
             depth=depth,
             target_object=target_object,
             randomize=randomize,
-            gridSize=gridSize
+            gridSize=gridSize,
+            fieldOfView=fieldOfView
         )
         self.randomize = randomize
         self.target_object=target_object.lower()
@@ -128,12 +147,14 @@ class AI2Thor(gym.Env):
         self.depth = depth
         self.action_space = gym.spaces.Discrete(len(self.all_actions))
         self.observation_space = gym.spaces.Box(shape=(width, height, int(depth) + 3), low=0, high=255, dtype=np.uint8)
+        self.current_state = None
+        self.last_state = None
 
     def get_action_id(self, action_str):
         return self.all_actions.index(action_str)
 
     def get_last_obs(self):
-        return self._obs(self.controller.last_event)
+        return self.last_observation
 
     def _obs(self, event):
         obs = event.frame.astype(np.uint8)
@@ -148,6 +169,10 @@ class AI2Thor(gym.Env):
         obs = self._obs(event)
         done = self.check_success(event.metadata)
         reward = float(done)
+
+        self.last_state = self.current_state
+        self.current_state = self.get_current_agent_state()
+        self.last_observation = obs
         return obs, reward, done, False, event.metadata
 
     def get_scene(self):
@@ -166,7 +191,13 @@ class AI2Thor(gym.Env):
         if self.randomize:
             self.randomize_controller()
         event = self.controller.last_event
-        return self._obs(event), event.metadata
+
+        obs = self._obs(event)
+
+        self.current_state = self.get_current_agent_state()
+        self.last_state = None
+        self.last_observation = obs
+        return obs, event.metadata
 
     def check_success(self, metadata):
         return metadata["lastAction"] == "Done" and self.check_find_target(metadata)

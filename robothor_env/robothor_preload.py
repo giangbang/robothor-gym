@@ -32,6 +32,8 @@ class AI2Thor_Preload(gym.Env):
         if precompute_file:
             self.load_graph(precompute_file)
 
+        self.step_count = 0
+
     @property
     def action_space(self):
         return self.graph.action_space
@@ -70,17 +72,18 @@ class AI2Thor_Preload(gym.Env):
                     (p[2]+0.1) * h/2/2.5])).astype(int)
 
         import cv2
+        graph.screenshot = graph.raw_screenshot
         r = round(w/256.)
         for point in all_points:
-            graph.raw_screenshot = cv2.circle(graph.raw_screenshot, 
+            graph.screenshot = cv2.circle(graph.screenshot, 
                     transform(point), radius=r, color=(0, 0, 255), thickness=-1)
         for point in terminal_points:
-            graph.raw_screenshot = cv2.circle(graph.raw_screenshot, 
+            graph.screenshot = cv2.circle(graph.screenshot, 
                     transform(point), radius=r, color=(255, 0, 0), thickness=-1)
 
         if filename is None:
             filename = f"{graph.scene}_{graph.target_obj}.png"
-        cv2.imwrite(filename, cv2.cvtColor(graph.raw_screenshot, cv2.COLOR_RGB2BGR))
+        cv2.imwrite(filename, cv2.cvtColor(graph.screenshot, cv2.COLOR_RGB2BGR))
 
     def build_graph(self, target_object="Apple", **kwargs):
         import robothor_env
@@ -121,6 +124,7 @@ class AI2Thor_Preload(gym.Env):
         self.graph.save(path_to_save_file)
 
     def reset(self, seed=None, reward_shaping=None, **kwargs):
+        self.step_count = 0
         if self.random_start:
             if self.all_vertices is None:
                 self.all_vertices = list(map(
@@ -134,6 +138,7 @@ class AI2Thor_Preload(gym.Env):
         return self.graph.get_obs(self.current_v), {}
 
     def step(self, action, reward_shaping = None):
+        self.step_count += 1
         self.current_v = self.graph.next_vertex(self.current_v, action)
         done = action == self.action_space.n - 1 and self.graph.check_terminal(self.current_v)
         reward = self._reward(self.current_v, done, reward_shaping \
@@ -248,8 +253,11 @@ class EnvGraph:
         return tuple(tuple(map(lambda x : int(x*10000), tup)) for tup in t)
 
     def inverse_vertex(self, vertex):
-        ret = tuple(tuple(map(lambda x : x/10000, tup)) for tup in t)
+        ret = list(tuple(map(lambda x : x/10000, tup)) for tup in vertex)
         ret[-1] = ret[-1][0]
+        for i in range(2):
+            ret[i] = dict(zip(["x", "y", "z"], ret[i]))
+        ret = tuple(ret)
         return ret
 
     def __len__(self):
@@ -284,7 +292,7 @@ def breath_first_search(env, graph):
                 rotation=v[1],
                 horizon=v[2]
             )
-            env.step(action)
+            obs = env.step(action)[0]
             pos, rot, hor = env.get_current_agent_state()
             next  = (pos, rot, hor)
             graph.add_edge(v, next, action)
@@ -294,7 +302,7 @@ def breath_first_search(env, graph):
             if next in graph:
                 continue
             q.append(next)
-            graph.add_vertex(next, env.get_last_obs())
+            graph.add_vertex(next, obs)
     return res
 
 gym.envs.registration.register(

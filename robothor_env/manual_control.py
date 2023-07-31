@@ -5,11 +5,20 @@ from __future__ import annotations
 
 import gymnasium as gym
 import pygame
+import cv2
+import numpy as np
 from gymnasium import Env
 
 import robothor_env
 
+
 class ManualControl:
+
+    metadata = {
+        "render_modes": ["human", "rgb_array"],
+        "render_fps": 10,
+    }
+
     def __init__(
         self,
         env: Env,
@@ -21,6 +30,7 @@ class ManualControl:
         self.window = None
         self.clock = None
         self.screen_size = 512
+        self.screenshot = None
 
     def start(self):
         """Start the window display with blocking event loop"""
@@ -38,6 +48,7 @@ class ManualControl:
     def step(self, action: Actions):
         _, reward, terminated, truncated, _ = self.env.step(action)
         print(f"step={self.env.step_count}, reward={reward:.2f}")
+        print(self.env.current_v)
 
         if terminated:
             print("terminated!")
@@ -46,7 +57,7 @@ class ManualControl:
             print("truncated!")
             self.reset(self.seed)
         else:
-            self.env.render()
+            self.render(self.env.render())
 
     def render(self, img):
         if self.window is None:
@@ -58,14 +69,32 @@ class ManualControl:
             pygame.display.set_caption("robothor-env")
         if self.clock is None:
             self.clock = pygame.time.Clock()
+
+        img = cv2.resize(img, (self.screen_size, self.screen_size),
+                interpolation = cv2.INTER_LINEAR)
         surf = pygame.surfarray.make_surface(img)
+
+        offset = surf.get_size()[0] * 0.1
+        # offset = 32 if self.agent_pov else 64
+        bg = pygame.Surface(
+            (int(surf.get_size()[0] + offset), 
+            int(surf.get_size()[1] + offset))
+        )
+        bg.convert()
+        bg.fill((255, 255, 255))
+        bg.blit(surf, (offset / 2, 0))
+
+        bg = pygame.transform.smoothscale(bg, (self.screen_size, self.screen_size))
+        bg = pygame.transform.rotate(bg, -90)
+
+        self.window.blit(bg, (0, 0))
         pygame.event.pump()
         self.clock.tick(self.metadata["render_fps"])
         pygame.display.flip()
 
     def reset(self, seed=None):
         self.env.reset(seed=seed)
-        self.env.render()
+        self.render(self.env.render())
         
     def close(self):
         if self.window:
@@ -82,8 +111,8 @@ class ManualControl:
             return
 
         key_to_action = {
-            "left": 3,
-            "right": 2,
+            "left": 2,
+            "right": 3,
             "up": 4,
             "down": 5,
             "w": 0,
