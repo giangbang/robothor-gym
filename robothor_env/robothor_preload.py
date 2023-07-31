@@ -292,11 +292,11 @@ def breath_first_search(env, graph):
                 rotation=v[1],
                 horizon=v[2]
             )
-            obs = env.step(action)[0]
+            obs, metadata = env.step(action)[[0, -1]]
             pos, rot, hor = env.get_current_agent_state()
             next  = (pos, rot, hor)
             graph.add_edge(v, next, action)
-            if env.check_success(env.controller.last_event.metadata):
+            if env.check_success(metadata):
                 graph.add_terminal(v) # v and next are the same, since "Done" does not alter env state
                 graph.add_terminal(next)
             if next in graph:
