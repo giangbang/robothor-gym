@@ -21,6 +21,8 @@ def parse_args():
         help="grid size")
     parser.add_argument("--scene", type=str, default="FloorPlan_Train1_1",
         help="scene")
+    parser.add_argument("--field-of-view", type=int, default=90,
+        help="fieldOfView")
 
     args = parser.parse_args()
     return args
@@ -33,7 +35,7 @@ if __name__ == "__main__":
         list_target_object = [args.target_obj]
 
     for obj in list_target_object:
-        env.build_graph(target_object=obj, scene=args.scene, gridSize=args.grid_size)
+        env.build_graph(target_object=obj, scene=args.scene, gridSize=args.grid_size, fieldOfView=fieldOfView)
         graph_file = f"robothor-{env.scene}-{env.target_obj}.pkl"
         env.save_graph(graph_file)
 
