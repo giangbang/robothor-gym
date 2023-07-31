@@ -35,7 +35,8 @@ if __name__ == "__main__":
         list_target_object = [args.target_obj]
 
     for obj in list_target_object:
-        env.build_graph(target_object=obj, scene=args.scene, gridSize=args.grid_size, fieldOfView=fieldOfView)
+        env.build_graph(target_object=obj, scene=args.scene, 
+                gridSize=args.grid_size, fieldOfView=args.field_of_view)
         graph_file = f"robothor-{env.scene}-{env.target_obj}.pkl"
         env.save_graph(graph_file)
 
@@ -44,8 +45,6 @@ if __name__ == "__main__":
     start_time = time.time()
     env.reset()
     for _ in range(n_step):
-        obs, reward, terminate, truncate, info = env.step(env.action_space.sample())
-        if terminate or truncate:
-            env.reset()
+        env.step(env.action_space.sample())
     end_time = time.time()
     print("fps: {:.3f}".format(n_step / (end_time - start_time)))

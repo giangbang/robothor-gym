@@ -20,7 +20,7 @@ class AI2Thor_Preload(gym.Env):
         "step_penalty": -0.01,
         "goal_success_reward": 10.0,
         "failed_stop_reward": 0.0, # not used
-        "shaping_weight": 1.0,
+        "shaping_weight": .1,
     }
 
     def __init__(self, precompute_file=None, reward_shaping:bool=True, random_start=True, **kwargs):
@@ -108,9 +108,10 @@ class AI2Thor_Preload(gym.Env):
 
         print("Total number of vertices:", len(self.graph.obs))
 
-        print("Finding shortest all vertices distances...")
-        self.graph.calculate_shortest_distance_to_goal()
-        print("Done.")
+        if self.graph.terminal:
+            print("Finding shortest all vertices distances...")
+            self.graph.calculate_shortest_distance_to_goal()
+            print("Done.")
 
         self.screenshot(self.graph)
 
@@ -131,6 +132,9 @@ class AI2Thor_Preload(gym.Env):
                     lambda v : self.graph.inverse_vertex(v), self.graph.obs.keys()
                 ))
             self.current_v = random.choice(self.all_vertices)
+            # set camera horizon to 0, agent always look directly ahead
+            # when starting a new episode
+            self.current_v = (*self.current_v[:-1], 0)
         else:
             self.current_v = self.graph.init_v
         if reward_shaping is not None:
@@ -151,7 +155,7 @@ class AI2Thor_Preload(gym.Env):
     def _reward(self, current_vertex, done, reward_shaping):
         reward = self.REWARD_CONFIG["step_penalty"] \
                 if not done else self.REWARD_CONFIG["goal_success_reward"]
-        if reward_shaping:
+        if reward_shaping and self.graph.distances:
             reward -= self.graph.get_distance_to_goal(current_vertex) * \
                     self.REWARD_CONFIG["shaping_weight"] * self.graph.env_params["gridSize"]
         return reward
@@ -183,11 +187,11 @@ class EnvGraph:
         from collections import deque
         q = deque()
         self.distances = dict()
-        assert self.terminal is not None
+        assert self.terminal, "Empty termination states."
 
         q.extend(self.terminal)
         current_distance = 0
-        while q:
+        while len(q) > 0:
             q_size = len(q)
             for _ in range(q_size):
                 v = q.popleft()
@@ -198,6 +202,7 @@ class EnvGraph:
                         self.distances[nei] = 0 # explored, in queue, overrided later
                         q.append(nei)
             current_distance += 1
+        assert len(self.distances) == len(self), f"{len(self.distances)}, {len(self)}"
         print("Done.")
 
     def next_vertex(self, vertex, edge):
@@ -282,7 +287,7 @@ def breath_first_search(env, graph):
     env = env.unwrapped
     assert type(env) is not gym.wrappers.TimeLimit
 
-    while len(q):
+    while len(q) > 0:
         v = q.popleft()
         res.append(v)
         for action in actions:
@@ -290,19 +295,24 @@ def breath_first_search(env, graph):
                 action="Teleport",
                 position=v[0],
                 rotation=v[1],
-                horizon=v[2]
+                horizon=np.clip(v[2], a_min=-29.9, a_max=59.9)
             )
-            obs, metadata = env.step(action)[[0, -1]]
-            pos, rot, hor = env.get_current_agent_state()
-            next  = (pos, rot, hor)
-            graph.add_edge(v, next, action)
+
+            step_result = env.step(action)
+            obs, metadata = step_result[::len(step_result)-1]
+
+            pos, rot, hor = env.get_current_agent_state(metadata)
+            next_v = (pos, rot, hor)
+            graph.add_edge(v, next_v, action)
             if env.check_success(metadata):
                 graph.add_terminal(v) # v and next are the same, since "Done" does not alter env state
-                graph.add_terminal(next)
-            if next in graph:
-                continue
-            q.append(next)
-            graph.add_vertex(next, obs)
+                graph.add_terminal(next_v)
+            if next_v not in graph:
+                q.append(next_v)
+                graph.add_vertex(next_v, obs)
+
+    if not graph.terminal:
+        print("WARN: Empty terminal states. Decrease the GridSize")
     return res
 
 gym.envs.registration.register(

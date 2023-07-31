@@ -178,8 +178,10 @@ class AI2Thor(gym.Env):
     def get_scene(self):
         return self.controller.last_event.metadata["sceneName"]
 
-    def get_current_agent_state(self):
-        metadata = self.controller.last_event.metadata["agent"]
+    def get_current_agent_state(self, metadata=None):
+        if metadata is None:
+            metadata = self.controller.last_event.metadata
+        metadata = metadata["agent"]
         return (metadata["position"], metadata["rotation"], metadata["cameraHorizon"])
 
     def reset(self, scene=None, randomize=None, seed=None, **kwargs):
@@ -205,7 +207,7 @@ class AI2Thor(gym.Env):
     def check_find_target(self, metadata):
         for obj in metadata["objects"]:
             if obj["objectType"].lower() == self.target_object:
-                if obj["distance"] <= 1 and obj["visible"]:
+                if obj["distance"] <= 1+self.env_params["gridSize"] and obj["visible"]:
                     return True
         return False
 
