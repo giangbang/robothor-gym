@@ -55,6 +55,10 @@ To summarize, a navigation episode is considered successful if both of the follo
 
 In the precomputed environments, the reward is similar to [pointnav env](https://allenact.org/tutorials/training-a-pointnav-model/#config-file-setup), with additional reward signal from the shortest distance from each point in the scene.
 However, instead of the geodesic distance in meter, the number of (bfs) steps needed to reach goal is used instead.
+#### Reward shaping
+We experiment with several reward shaping function as follows:
+ - Reward = minus distance to goal
+ - Reward = changes in the distance to goal
 
 ### Code example
 ```python

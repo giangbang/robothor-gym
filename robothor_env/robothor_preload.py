@@ -176,8 +176,8 @@ class AI2Thor_Preload(gym.Env):
 
     def _reward_shaping_2(self, prev_v, current_v):
         """Reward shaping = changes in the distance to goal"""
-        return (self.graph.get_distance_to_goal(current_v) - 
-                self.graph.get_distance_to_goal(prev_v)) * \
+        return (self.graph.get_distance_to_goal(prev_v) - 
+                self.graph.get_distance_to_goal(current_v)) * \
                 self.REWARD_CONFIG["shaping_weight"] * self.graph.env_params["gridSize"]
 
 class EnvGraph:
