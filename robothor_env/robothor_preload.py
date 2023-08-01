@@ -134,6 +134,7 @@ class AI2Thor_Preload(gym.Env):
 
     def reset(self, seed=None, reward_shaping=None, **kwargs):
         self.step_count = 0
+        self.prev_v = None
         if self.random_start:
             if self.all_vertices is None:
                 self.all_vertices = list(map(
@@ -147,26 +148,37 @@ class AI2Thor_Preload(gym.Env):
             self.current_v = self.graph.init_v
         if reward_shaping is not None:
             self.reward_shaping = reward_shaping
-        return self.graph.get_obs(self.current_v), {}
+        return self.graph.get_obs(self.current_v), {"is_success": False}
 
     def step(self, action, reward_shaping = None):
         self.step_count += 1
+        self.prev_v = self.current_v
         self.current_v = self.graph.next_vertex(self.current_v, action)
         done = action == self.action_space.n - 1 and self.graph.check_terminal(self.current_v)
-        reward = self._reward(self.current_v, done, reward_shaping \
+        reward = self._reward(self.prev_v, self.current_v, done, reward_shaping \
                 if reward_shaping is not None else self.reward_shaping)
-        return self.graph.get_obs(self.current_v), reward, done, False, {}
+        return self.graph.get_obs(self.current_v), reward, done, False, {"is_success": done}
 
     def render(self, render_mode="rgb_array"):
         return self.graph.get_obs(self.current_v)
 
-    def _reward(self, current_vertex, done, reward_shaping):
+    def _reward(self, prev_vertex, current_vertex, done, reward_shaping):
         reward = self.REWARD_CONFIG["step_penalty"] \
                 if not done else self.REWARD_CONFIG["goal_success_reward"]
         if reward_shaping and self.graph.distances:
-            reward -= self.graph.get_distance_to_goal(current_vertex) * \
-                    self.REWARD_CONFIG["shaping_weight"] * self.graph.env_params["gridSize"]
+            reward += self._reward_shaping_2(prev_vertex, current_vertex)
         return reward
+
+    def _reward_shaping_1(self, current_v, **kwargs):
+        """Reward shaping = minus distance to goal"""
+        return -self.graph.get_distance_to_goal(current_vertex) * \
+                    self.REWARD_CONFIG["shaping_weight"] * self.graph.env_params["gridSize"]
+
+    def _reward_shaping_2(self, prev_v, current_v):
+        """Reward shaping = changes in the distance to goal"""
+        return (self.graph.get_distance_to_goal(current_v) - 
+                self.graph.get_distance_to_goal(prev_v)) * \
+                self.REWARD_CONFIG["shaping_weight"] * self.graph.env_params["gridSize"]
 
 class EnvGraph:
     def __init__(self):
