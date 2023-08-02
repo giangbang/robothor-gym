@@ -20,7 +20,7 @@ class AI2Thor_Preload(gym.Env):
         "step_penalty": -0.01,
         "goal_success_reward": 10.0,
         "failed_stop_reward": 0.0, # not used
-        "shaping_weight": .1,
+        "shaping_weight": .01,
     }
 
     def __init__(self, 
@@ -166,19 +166,23 @@ class AI2Thor_Preload(gym.Env):
         reward = self.REWARD_CONFIG["step_penalty"] \
                 if not done else self.REWARD_CONFIG["goal_success_reward"]
         if reward_shaping and self.graph.distances:
-            reward += self._reward_shaping_2(prev_vertex, current_vertex)
+            reward += self._reward_shaping_1(current_vertex)
         return reward
 
     def _reward_shaping_1(self, current_v, **kwargs):
         """Reward shaping = minus distance to goal"""
-        return -self.graph.get_distance_to_goal(current_vertex) * \
+        return -self.graph.get_distance_to_goal(current_v) * \
                     self.REWARD_CONFIG["shaping_weight"] * self.graph.env_params["gridSize"]
 
-    def _reward_shaping_2(self, prev_v, current_v):
+    def _reward_shaping_2(self, prev_v, current_v, **kwargs):
         """Reward shaping = changes in the distance to goal"""
         return (self.graph.get_distance_to_goal(prev_v) - 
                 self.graph.get_distance_to_goal(current_v)) * \
                 self.REWARD_CONFIG["shaping_weight"] * self.graph.env_params["gridSize"]
+
+    def _reward_shaping_3(self, prev_v, current_v):
+        return self._reward_shaping_1(current_v) + \
+               self._reward_shaping_2(prev_v, current_v)
 
 class EnvGraph:
     def __init__(self):

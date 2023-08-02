@@ -11,8 +11,6 @@ import pygame
 import cv2
 import numpy as np
 
-import robothor_env
-
 
 class ManualControl:
 
@@ -130,6 +128,7 @@ class ManualControl:
 
 if __name__ == "__main__":
     import argparse
+    import robothor_env
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -137,7 +136,7 @@ if __name__ == "__main__":
         type=str,
         help="gym environment to load",
         choices=gym.envs.registry.keys(),
-        default="robothor-apple",
+        default="robothor-precompute",
     )
     parser.add_argument(
         "--seed",
