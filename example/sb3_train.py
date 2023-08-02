@@ -6,14 +6,17 @@ except ModuleNotFoundError:
 import argparse
 
 import numpy as np
+import cv2
+import os
 
 from stable_baselines3.common.evaluation import evaluate_policy
+from stable_baselines3.common.callbacks import EvalCallback
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--algorithm", type=str, default="ppo",
-        choices=["lstm-ppo", "ppo"])
+        choices=["lstm-ppo", "ppo", "dqn"])
     parser.add_argument("--precompute-file", type=str, default=None,
         help="")
     parser.add_argument("--n-step", type=int, default=1e6,
@@ -27,23 +30,29 @@ def main():
     file_path = args.precompute_file
 
     env = gym.make("robothor-precompute", precompute_file=file_path)
-    
+    eval_env = gym.make("robothor-precompute", precompute_file=file_path)
+
     if args.algorithm == "lstm-ppo":
         from sb3_contrib import RecurrentPPO
         model = RecurrentPPO("CnnLstmPolicy", env=env, verbose=1, tensorboard_log="./runs/")
     elif args.algorithm == "ppo":
         from stable_baselines3 import PPO
         model = PPO("CnnPolicy", env=env, verbose=1, tensorboard_log="./runs/")
-    model.learn(args.n_step)
+    elif args.algorithm == "dqn":
+        from stable_baselines3 import DQN
+        model = DQN("CnnPolicy", env=env, verbose=1, tensorboard_log="./runs/")
+
+
+    eval_callback = EvalCallback(eval_env, best_model_save_path="./runs/",
+                             log_path="./logs/", eval_freq=500,
+                             deterministic=True, render=False)
+    model.learn(args.n_step, callback=eval_callback)
 
     vec_env = model.get_env()
     mean_reward, std_reward = evaluate_policy(model, vec_env, n_eval_episodes=20, warn=False)
-    print(mean_reward)
+    print("Average reward of final policy:", mean_reward)
 
-    model.save("ppo_recurrent")
-    del model # remove to demonstrate saving and loading
-
-    model = RecurrentPPO.load("ppo_recurrent")
+    model.save(args.algorithm)
 
     obs = vec_env.reset()
     # cell and hidden state of the LSTM
@@ -59,9 +68,6 @@ def main():
         obses.append(vec_env.render())
         if dones.any():
             break
-    
-    import cv2
-    import os
 
     video_name = 'demo.avi'
 
