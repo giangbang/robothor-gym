@@ -21,6 +21,8 @@ def parse_args():
         help="")
     parser.add_argument("--n-step", type=int, default=1e6,
         help="")
+    parser.add_argument("--eval-freq", type=int, default=10_000,
+        help="")
 
     args = parser.parse_args()
     return args
@@ -44,7 +46,7 @@ def main():
 
 
     eval_callback = EvalCallback(eval_env, best_model_save_path="./runs/",
-                             log_path="./logs/", eval_freq=500,
+                             log_path="./logs/", eval_freq=args.eval_freq,
                              deterministic=True, render=False)
     model.learn(args.n_step, callback=eval_callback)
 
@@ -65,7 +67,7 @@ def main():
         action, lstm_states = model.predict(obs, state=lstm_states, episode_start=episode_starts, deterministic=True)
         obs, rewards, dones, info = vec_env.step(action)
         episode_starts = dones
-        obses.append(vec_env.render())
+        obses.append(np.transpose(obs[0], (1, 2, 0)))
         if dones.any():
             break
 
