@@ -7,11 +7,13 @@ import argparse
 
 import numpy as np
 
-from sb3_contrib import RecurrentPPO
 from stable_baselines3.common.evaluation import evaluate_policy
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--algorithm", type=str, default="ppo",
+        choices=["lstm-ppo", "ppo"])
     parser.add_argument("--precompute-file", type=str, default=None,
         help="")
     parser.add_argument("--n-step", type=int, default=1e6,
@@ -26,8 +28,12 @@ def main():
 
     env = gym.make("robothor-precompute", precompute_file=file_path)
     
-    
-    model = RecurrentPPO("MlpLstmPolicy", env=env, verbose=1, tensorboard_log="./runs/")
+    if args.algorithm == "lstm-ppo":
+        from sb3_contrib import RecurrentPPO
+        model = RecurrentPPO("CnnLstmPolicy", env=env, verbose=1, tensorboard_log="./runs/")
+    elif args.algorithm == "ppo":
+        from stable_baselines3 import PPO
+        model = PPO("CnnPolicy", env=env, verbose=1, tensorboard_log="./runs/")
     model.learn(args.n_step)
 
     vec_env = model.get_env()
