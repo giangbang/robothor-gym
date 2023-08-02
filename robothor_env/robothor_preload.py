@@ -322,6 +322,7 @@ def breath_first_search(env, graph):
                 action="Teleport",
                 position=v[0],
                 rotation=v[1],
+                # see https://github.com/allenai/robothor-challenge/issues/31
                 horizon=np.clip(v[2], a_min=-29.9, a_max=59.9)
             )
 

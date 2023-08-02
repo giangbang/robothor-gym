@@ -47,7 +47,7 @@ def main():
 
     eval_callback = EvalCallback(eval_env, best_model_save_path="./runs/",
                              log_path="./logs/", eval_freq=args.eval_freq,
-                             deterministic=True, render=False)
+                             deterministic=False, render=False)
     model.learn(args.n_step, callback=eval_callback)
 
     vec_env = model.get_env()
