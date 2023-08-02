@@ -55,10 +55,6 @@ To summarize, a navigation episode is considered successful if both of the follo
 
 In the precomputed environments, the reward is similar to [pointnav env](https://allenact.org/tutorials/training-a-pointnav-model/#config-file-setup), with additional reward signal from the shortest distance from each point in the scene.
 However, instead of the geodesic distance in meter, the number of (bfs) steps needed to reach goal is used instead.
-#### Reward shaping
-We experiment with several reward shaping function as follows:
- - Reward = minus distance to goal
- - Reward = changes in the distance to goal
 
 ### Code example
 ```python
@@ -92,7 +88,8 @@ env.save_graph("graph.pkl")
 
 del env
 
-env = gym.make("robothor-precompute", precompute_file="graph.pkl")
+env = gym.make("robothor-precompute", precompute_file="graph.pkl", \
+                random_start=True) # starting the episode at a random position
 # or the graph can be loaded by using `env.load_graph("graph.pkl")`
 tot_reward=0
 while True:
@@ -118,9 +115,10 @@ python -m robothor_env.manual_control --env-id robothor-apple
 To open a new window that allow user input from keyboard. 
 Manually control the robot by pressing `up`, `down`, `left`, and `right` buttons to rotate and `s`, `w` to move backward/forward, respectively.
 
-## RL Training 
+## RL Training
 LSTM-PPO with stable-baselines3
 ```
 python ./example/sb3_train.py --precompute-file <precompute-file-path>
 ```
-Using the precompute environments (need precomputed graph path)
+Using the precompute environments (need precomputed graph path). Training PPO from stable-baselines3 converge after around 150k environment steps (about 30 minutes of training on Kaggle, with peak performance about 320 fps).
+![PPO result](./images/ppo_sb3_results.png)
