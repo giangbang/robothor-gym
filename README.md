@@ -122,3 +122,4 @@ python ./example/sb3_train.py --precompute-file <precompute-file-path>
 ```
 Using the precompute environments (need precomputed graph path). Training PPO from stable-baselines3 converge after around 150k environment steps (about 30 minutes of training on Kaggle, with peak performance about 320 fps).
 ![PPO result](./images/ppo_sb3_results.png)
+The [link](https://www.kaggle.com/code/banggiangle/robothor-with-stable-baselines3) to the training notebook on kaggle.
